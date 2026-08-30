@@ -650,7 +650,7 @@ app.post("/admin/users/:id/toggle", requireRole("ADMIN"), async (req, res) => {
   res.redirect("/admin/users");
 });
 
-app.get("/admin/units", requireRole("COMMAND"), async (req, res) => {
+app.get("/admin/units", requireRole("DISPATCH"), async (req, res) => {
   const units = await pool.query(`
     SELECT u.*,
       COALESCE(
@@ -672,9 +672,12 @@ app.get("/admin/units", requireRole("COMMAND"), async (req, res) => {
   res.render("admin-units", { units: units.rows });
 });
 
-app.post("/admin/units", requireRole("COMMAND"), async (req, res) => {
+app.post("/admin/units", requireRole("DISPATCH"), async (req, res) => {
   const name = clean(req.body.unit_name);
-  const type = clean(req.body.unit_type).toUpperCase() || "ENGINE";
+  const requestedType = clean(req.body.unit_type).toUpperCase();
+  const allowedTypes = ["ENGINE","LADDER","TRUCK","RESCUE","SQUAD","MEDIC","AMBULANCE","BATTALION","COMMAND","HAZMAT","MARINE","UTILITY","OTHER"];
+  const type = allowedTypes.includes(requestedType) ? requestedType : "OTHER";
+
   if (name) {
     await pool.query(
       `INSERT INTO units (unit_name, unit_type)
@@ -683,6 +686,53 @@ app.post("/admin/units", requireRole("COMMAND"), async (req, res) => {
       [name, type]
     );
   }
+  res.redirect("/admin/units");
+});
+
+app.post("/admin/units/:id/edit", requireRole("DISPATCH"), async (req, res) => {
+  const id = Number(req.params.id);
+  const name = clean(req.body.unit_name);
+  const requestedType = clean(req.body.unit_type).toUpperCase();
+  const allowedTypes = ["ENGINE","LADDER","TRUCK","RESCUE","SQUAD","MEDIC","AMBULANCE","BATTALION","COMMAND","HAZMAT","MARINE","UTILITY","OTHER"];
+  const type = allowedTypes.includes(requestedType) ? requestedType : "OTHER";
+
+  if (id && name) {
+    await pool.query(
+      `UPDATE units SET unit_name = $1, unit_type = $2 WHERE id = $3`,
+      [name, type, id]
+    ).catch(err => {
+      if (err.code !== "23505") throw err;
+    });
+  }
+  res.redirect("/admin/units");
+});
+
+app.post("/admin/units/:id/status", requireRole("DISPATCH"), async (req, res) => {
+  const id = Number(req.params.id);
+  const status = clean(req.body.status).toUpperCase();
+  const allowed = ["AVAILABLE","OUT OF SERVICE","BUSY","TRAINING","STATION"];
+  if (id && allowed.includes(status)) {
+    await pool.query(
+      `UPDATE units SET status = $1,
+         assigned_incident = CASE WHEN $1 = 'AVAILABLE' THEN NULL ELSE assigned_incident END
+       WHERE id = $2`,
+      [status, id]
+    );
+  }
+  res.redirect("/admin/units");
+});
+
+app.post("/admin/units/:id/delete", requireRole("COMMAND"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return res.redirect("/admin/units");
+
+  const activeAssignment = await pool.query(
+    `SELECT 1 FROM units WHERE id = $1 AND assigned_incident IS NOT NULL`,
+    [id]
+  );
+  if (activeAssignment.rowCount) return res.redirect("/admin/units");
+
+  await pool.query(`DELETE FROM units WHERE id = $1`, [id]);
   res.redirect("/admin/units");
 });
 

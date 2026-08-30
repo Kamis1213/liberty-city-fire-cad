@@ -212,3 +212,69 @@ legend { color: var(--accent2); font-weight: 800; }
 .radio-status.sent { background: #1f6238; }
 .radio-status.failed { background: #8b1b1b; }
 .radio-status.not-configured { background: #3b4655; color: #d7dee8; }
+
+
+/* v2.4 Unit Management */
+.page-heading,.section-heading,.dispatch-title-row,.unit-card-head {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+}
+.button-link {
+  display:inline-block;
+  padding:10px 14px;
+  border-radius:6px;
+  font-weight:800;
+}
+.secondary-link {
+  background:var(--panel2);
+  border:1px solid var(--line);
+  color:var(--text);
+}
+.unit-manager-grid {
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+}
+.unit-manager-card {
+  gap:12px;
+}
+.unit-type-tag {
+  color:var(--muted);
+  font-size:.72rem;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.unit-card-head h3 {
+  margin:3px 0 0;
+  font-size:1.25rem;
+}
+.compact-form {
+  border-top:1px solid var(--line);
+  padding-top:12px;
+}
+.unit-status-form select {
+  flex:1;
+}
+.crew-block {
+  border-top:1px solid var(--line);
+  padding-top:12px;
+}
+.full-width { width:100%; }
+.status-pill {
+  padding:6px 8px;
+  border-radius:6px;
+  background:#3b4655;
+}
+.status-available { background:#1f6238; color:#fff; }
+.status-dispatched,.status-busy { background:#805b08; color:#fff; }
+.status-en-route { background:#235c83; color:#fff; }
+.status-on-scene { background:#6a3d91; color:#fff; }
+.status-out-of-service { background:#8b1b1b; color:#fff; }
+.status-training,.status-station { background:#3b4655; color:#fff; }
+
+@media (max-width:700px) {
+  .page-heading,.section-heading,.dispatch-title-row,.unit-card-head {
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}

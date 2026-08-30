@@ -28,9 +28,11 @@
   <a href="/mdt">MDT</a>
   <a href="/member">Member</a>
   <a href="/history">History</a>
+  <% if (["DISPATCH","COMMAND","ADMIN"].includes(user.role)) { %>
+    <a href="/admin/units">Units</a>
+  <% } %>
   <% if (["COMMAND","ADMIN"].includes(user.role)) { %>
     <a href="/admin/loa">LOA Requests</a>
-    <a href="/admin/units">Units</a>
   <% } %>
   <% if (user.role === "ADMIN") { %><a href="/admin/users">Users</a><% } %>
 </nav>

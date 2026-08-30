@@ -138,3 +138,16 @@ V2.3.1 INCIDENT ROUTE HOTFIX
 - Restores/duplicates incident creation on POST /incidents and POST /incidents/new.
 - Dashboard dispatch form now posts to /incidents/new.
 - Existing CAD database and RADIO_API integration are unchanged.
+
+
+V2.4 UNIT BUILDER
+-----------------
+- Dispatchers, Command, and Admin can open Units from the CAD navigation.
+- Create custom apparatus directly inside the CAD.
+- Supported types include Engine, Ladder, Truck, Rescue, Squad, Medic, Ambulance,
+  Battalion, Command, HazMat, Marine, Utility, and Other.
+- Rename units and change apparatus type.
+- Manually set Available, Out of Service, Busy, Training, or Station.
+- Command/Admin can delete units when they are not assigned to an incident.
+- New units automatically appear on the Dispatch screen.
+- Existing database, incidents, users, radio integration, and PTT system are unchanged.

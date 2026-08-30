@@ -1,37 +1,117 @@
 <%- include("partials/header", { title: "Unit Management" }) %>
+
+<div class="page-heading">
+  <div>
+    <h1>Unit Management</h1>
+    <p class="muted">Create and manage apparatus available to the CAD dispatcher.</p>
+  </div>
+  <a class="button-link secondary-link" href="/dashboard">Back to Dispatch</a>
+</div>
+
 <div class="grid two">
   <section class="card">
-    <h1>Add Unit</h1>
+    <h2>Create New Unit</h2>
     <form method="post" action="/admin/units" class="stack">
-      <label>Unit Name<input name="unit_name" placeholder="Engine 3" required></label>
-      <label>Type<input name="unit_type" placeholder="ENGINE" required></label>
-      <button type="submit">Add Unit</button>
+      <label>
+        Unit Name
+        <input name="unit_name" placeholder="Engine 3" required maxlength="60">
+      </label>
+
+      <label>
+        Apparatus Type
+        <select name="unit_type" required>
+          <option value="ENGINE">Engine</option>
+          <option value="LADDER">Ladder</option>
+          <option value="TRUCK">Truck</option>
+          <option value="RESCUE">Rescue</option>
+          <option value="SQUAD">Squad</option>
+          <option value="MEDIC">Medic</option>
+          <option value="AMBULANCE">Ambulance</option>
+          <option value="BATTALION">Battalion</option>
+          <option value="COMMAND">Command</option>
+          <option value="HAZMAT">HazMat</option>
+          <option value="MARINE">Marine</option>
+          <option value="UTILITY">Utility</option>
+          <option value="OTHER">Other</option>
+        </select>
+      </label>
+
+      <button type="submit">+ Create Unit</button>
     </form>
   </section>
+
   <section class="card">
-    <h2>Apparatus</h2>
-    <p class="muted">View current status and crew assignments.</p>
+    <h2>How It Works</h2>
+    <p>As soon as you create a unit here, it becomes available on the Dispatch screen for new incidents.</p>
+    <p class="muted">Dispatchers can create, rename, change type, and update status. Command/Admin can also remove unused units.</p>
   </section>
 </div>
 
 <section class="card">
-  <div class="unit-grid">
+  <div class="section-heading">
+    <div>
+      <h2>Current Apparatus</h2>
+      <p class="muted"><%= units.length %> unit<%= units.length === 1 ? "" : "s" %> in CAD</p>
+    </div>
+  </div>
+
+  <div class="unit-grid unit-manager-grid">
     <% units.forEach(u => { %>
-      <article class="unit-card large">
-        <h3><%= u.unit_name %></h3>
-        <div><%= u.unit_type %></div>
-        <div class="status"><%= u.status %></div>
-        <hr>
-        <strong>Crew</strong>
-        <% if (!u.crew.length) { %>
-          <p class="muted">No crew staffed.</p>
-        <% } else { %>
-          <% u.crew.forEach(c => { %>
-            <p><%= c.position %> — <%= c.rank %> <%= c.name %></p>
-          <% }) %>
+      <article class="unit-card large unit-manager-card">
+        <div class="unit-card-head">
+          <div>
+            <div class="unit-type-tag"><%= u.unit_type %></div>
+            <h3><%= u.unit_name %></h3>
+          </div>
+          <div class="status status-pill status-<%= String(u.status).toLowerCase().replaceAll(" ","-") %>"><%= u.status %></div>
+        </div>
+
+        <form method="post" action="/admin/units/<%= u.id %>/edit" class="stack compact-form">
+          <label>
+            Unit Name
+            <input name="unit_name" value="<%= u.unit_name %>" required maxlength="60">
+          </label>
+          <label>
+            Type
+            <select name="unit_type">
+              <% ["ENGINE","LADDER","TRUCK","RESCUE","SQUAD","MEDIC","AMBULANCE","BATTALION","COMMAND","HAZMAT","MARINE","UTILITY","OTHER"].forEach(t => { %>
+                <option value="<%= t %>" <%= u.unit_type === t ? "selected" : "" %>><%= t %></option>
+              <% }) %>
+            </select>
+          </label>
+          <button class="secondary" type="submit">Save Unit</button>
+        </form>
+
+        <form method="post" action="/admin/units/<%= u.id %>/status" class="inline unit-status-form">
+          <select name="status">
+            <% ["AVAILABLE","OUT OF SERVICE","BUSY","TRAINING","STATION"].forEach(st => { %>
+              <option value="<%= st %>" <%= u.status === st ? "selected" : "" %>><%= st %></option>
+            <% }) %>
+          </select>
+          <button class="secondary" type="submit">Set Status</button>
+        </form>
+
+        <div class="crew-block">
+          <strong>Crew</strong>
+          <% if (!u.crew.length) { %>
+            <p class="muted">No crew staffed.</p>
+          <% } else { %>
+            <% u.crew.forEach(c => { %>
+              <p><%= c.position %> — <%= c.rank %> <%= c.name %></p>
+            <% }) %>
+          <% } %>
+        </div>
+
+        <% if (user.role === "COMMAND" || user.role === "ADMIN") { %>
+          <form method="post" action="/admin/units/<%= u.id %>/delete" onsubmit="return confirm('Delete <%= u.unit_name %> from the CAD?');">
+            <button class="danger-btn full-width" type="submit" <%= u.assigned_incident ? "disabled" : "" %>>
+              <%= u.assigned_incident ? "Unit Assigned — Cannot Delete" : "Delete Unit" %>
+            </button>
+          </form>
         <% } %>
       </article>
     <% }) %>
   </div>
 </section>
+
 <%- include("partials/footer") %>
