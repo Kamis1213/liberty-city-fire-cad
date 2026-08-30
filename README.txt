@@ -1,4 +1,4 @@
-LIBERTY CITY FIRE CAD v2
+LIBERTY CITY FIRE CAD v2.1
 ========================
 
 This version is built for 24/7 hosting with PostgreSQL.
@@ -67,3 +67,11 @@ IMPORTANT
 ---------
 Do not put your real password or Discord token into GitHub.
 Use host environment variables/secrets instead.
+
+V2.1 UPGRADE
+------------
+- Priority 1 / 2 / 3 incidents
+- Automatic DISPATCHED status when units are assigned
+- Dispatch, En Route, On Scene and Closed timestamps
+- Priority badges on Dispatch and History screens
+- Safe automatic database migration for existing v2 database

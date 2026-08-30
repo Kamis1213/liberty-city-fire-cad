@@ -155,3 +155,9 @@ legend { color: var(--accent2); font-weight: 800; }
   .topbar { align-items: flex-start; flex-direction: column; }
   .request-card { flex-direction: column; }
 }
+
+.priority { display:inline-block; padding:5px 8px; border-radius:5px; font-size:.78rem; font-weight:900; white-space:nowrap; }
+.priority-1 { background:#8b1b1b; color:#fff; }
+.priority-2 { background:#805b08; color:#fff; }
+.priority-3 { background:#245b37; color:#fff; }
+.times { white-space:nowrap; line-height:1.45; }

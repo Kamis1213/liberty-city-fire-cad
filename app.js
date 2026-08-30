@@ -108,6 +108,10 @@ async function initDatabase() {
       notes TEXT DEFAULT '',
       status TEXT NOT NULL DEFAULT 'PENDING',
       dispatcher TEXT DEFAULT '',
+      priority TEXT NOT NULL DEFAULT 'PRIORITY 2',
+      dispatched_at TIMESTAMPTZ,
+      enroute_at TIMESTAMPTZ,
+      onscene_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       closed_at TIMESTAMPTZ
     );
@@ -140,6 +144,11 @@ async function initDatabase() {
       reviewed_at TIMESTAMPTZ
     );
   `);
+
+  await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS priority TEXT NOT NULL DEFAULT 'PRIORITY 2'`);
+  await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS dispatched_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS enroute_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS onscene_at TIMESTAMPTZ`);
 
   const adminUsername = process.env.ADMIN_USERNAME || "admin";
   const adminPassword = process.env.ADMIN_PASSWORD || "ChangeMe123!";
@@ -283,6 +292,9 @@ app.post("/incidents", requireRole("DISPATCH"), async (req, res) => {
   const callType = clean(req.body.call_type);
   const address = clean(req.body.address);
   const notes = clean(req.body.notes);
+  const priority = ["PRIORITY 1","PRIORITY 2","PRIORITY 3"].includes(clean(req.body.priority).toUpperCase())
+    ? clean(req.body.priority).toUpperCase()
+    : "PRIORITY 2";
   let unitIds = req.body.unit_ids || [];
   if (!Array.isArray(unitIds)) unitIds = [unitIds];
 
@@ -291,10 +303,10 @@ app.post("/incidents", requireRole("DISPATCH"), async (req, res) => {
   const number = await nextIncidentNumber();
   const incidentResult = await pool.query(
     `INSERT INTO incidents
-      (incident_number, call_type, address, notes, dispatcher)
-     VALUES ($1, $2, $3, $4, $5)
+      (incident_number, call_type, address, notes, dispatcher, priority)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [number, callType, address, notes, req.session.user.name]
+    [number, callType, address, notes, req.session.user.name, priority]
   );
   const incident = incidentResult.rows[0];
 
@@ -324,6 +336,13 @@ app.post("/incidents", requireRole("DISPATCH"), async (req, res) => {
     assignedNames.push(unitResult.rows[0].unit_name);
   }
 
+  if (assignedNames.length) {
+    await pool.query(
+      `UPDATE incidents SET status = 'DISPATCHED', dispatched_at = NOW() WHERE id = $1`,
+      [incident.id]
+    );
+    incident.status = "DISPATCHED";
+  }
   await sendToRadio(incident, assignedNames.join(", "));
   res.redirect("/dashboard");
 });
@@ -337,6 +356,9 @@ app.post("/incidents/:id/status", requireRole("DISPATCH"), async (req, res) => {
   await pool.query(
     `UPDATE incidents
      SET status = $1,
+         dispatched_at = CASE WHEN $1 = 'DISPATCHED' AND dispatched_at IS NULL THEN NOW() ELSE dispatched_at END,
+         enroute_at = CASE WHEN $1 = 'EN ROUTE' AND enroute_at IS NULL THEN NOW() ELSE enroute_at END,
+         onscene_at = CASE WHEN $1 = 'ON SCENE' AND onscene_at IS NULL THEN NOW() ELSE onscene_at END,
          closed_at = CASE WHEN $1 = 'CLOSED' THEN NOW() ELSE closed_at END
      WHERE id = $2`,
     [status, id]
