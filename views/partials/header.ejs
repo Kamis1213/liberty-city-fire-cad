@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+<div id="dispatch-alert" class="dispatch-alert hidden" role="alert" aria-live="assertive"></div>
 <header class="topbar">
   <div>
     <div class="brand">LIBERTY CITY FIRE DEPARTMENT</div>
@@ -16,6 +17,7 @@
     <div class="userbox">
       <strong><%= user.name %></strong>
       <span><%= user.rank || user.role %></span>
+      <button id="enable-audio" class="audio-btn" type="button">Enable Dispatch Audio</button>
       <a href="/logout">Logout</a>
     </div>
   <% } %>

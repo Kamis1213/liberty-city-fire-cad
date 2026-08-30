@@ -161,3 +161,54 @@ legend { color: var(--accent2); font-weight: 800; }
 .priority-2 { background:#805b08; color:#fff; }
 .priority-3 { background:#245b37; color:#fff; }
 .times { white-space:nowrap; line-height:1.45; }
+
+.audio-btn {
+  background: #202733;
+  border: 1px solid #465364;
+  padding: 7px 10px;
+  font-size: .8rem;
+}
+.audio-btn.enabled {
+  background: #1f6238;
+  border-color: #3f8b5a;
+}
+.dispatch-alert {
+  position: fixed;
+  z-index: 9999;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, 94vw);
+  background: #160b0b;
+  border: 3px solid #d6342d;
+  border-radius: 10px;
+  padding: 18px;
+  box-shadow: 0 14px 45px rgba(0,0,0,.55);
+  text-align: center;
+}
+.dispatch-alert.hidden { display: none; }
+.dispatch-alert-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #f4b942;
+  margin-bottom: 8px;
+}
+.dispatch-alert-units {
+  margin-top: 8px;
+  font-weight: 800;
+}
+.dispatch-alert-notes {
+  margin: 8px 0 12px;
+  color: #c9d2dc;
+}
+.radio-status {
+  display: inline-block;
+  padding: 4px 7px;
+  border-radius: 5px;
+  font-size: .72rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.radio-status.sent { background: #1f6238; }
+.radio-status.failed { background: #8b1b1b; }
+.radio-status.not-configured { background: #3b4655; color: #d7dee8; }

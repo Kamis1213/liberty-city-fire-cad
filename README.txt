@@ -1,4 +1,4 @@
-LIBERTY CITY FIRE CAD v2.1
+LIBERTY CITY FIRE CAD v2.2
 ========================
 
 This version is built for 24/7 hosting with PostgreSQL.
@@ -75,3 +75,29 @@ V2.1 UPGRADE
 - Dispatch, En Route, On Scene and Closed timestamps
 - Priority badges on Dispatch and History screens
 - Safe automatic database migration for existing v2 database
+
+
+V2.2 DISPATCH ALERTS + RADIO
+----------------------------
+- Browser-based station dispatch tones (no audio files required)
+- "Enable Dispatch Audio" button for browser autoplay permission
+- Priority-specific alert tones
+- Pop-up incident alert with acknowledge button
+- Optional desktop browser notification
+- Firefighter accounts only receive alerts for the unit they are staffed on
+- Dispatch / Command / Admin receive active dispatch alerts
+- 4-second live alert polling
+- Radio delivery status shown on Dispatch screen
+- Radio payload now includes incident priority
+- Safe database migration for existing v2/v2.1 databases
+
+IMPORTANT ABOUT RADIO
+---------------------
+RADIO_API must be a PUBLICLY REACHABLE HTTPS URL when the CAD is hosted online.
+A Render-hosted CAD cannot call http://127.0.0.1:3100 on your home computer.
+
+Example:
+RADIO_API=https://your-online-radio-server.example.com/dispatch
+
+The existing local radio server can be upgraded/hosted separately, then its public
+/dispatch URL can be placed in Render as the RADIO_API environment variable.

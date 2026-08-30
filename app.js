@@ -112,6 +112,8 @@ async function initDatabase() {
       dispatched_at TIMESTAMPTZ,
       enroute_at TIMESTAMPTZ,
       onscene_at TIMESTAMPTZ,
+      radio_status TEXT NOT NULL DEFAULT 'NOT CONFIGURED',
+      radio_error TEXT DEFAULT '',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       closed_at TIMESTAMPTZ
     );
@@ -149,6 +151,8 @@ async function initDatabase() {
   await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS dispatched_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS enroute_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS onscene_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS radio_status TEXT NOT NULL DEFAULT 'NOT CONFIGURED'`);
+  await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS radio_error TEXT DEFAULT ''`);
 
   const adminUsername = process.env.ADMIN_USERNAME || "admin";
   const adminPassword = process.env.ADMIN_PASSWORD || "ChangeMe123!";
@@ -201,21 +205,43 @@ async function nextIncidentNumber() {
 
 async function sendToRadio(incident, unitNames) {
   const url = clean(process.env.RADIO_API);
-  if (!url) return;
+
+  if (!url) {
+    await pool.query(
+      "UPDATE incidents SET radio_status = 'NOT CONFIGURED', radio_error = '' WHERE id = $1",
+      [incident.id]
+    );
+    return;
+  }
+
   try {
-    await fetch(url, {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         incidentNumber: incident.incident_number,
+        priority: incident.priority,
         callType: incident.call_type,
         address: incident.address,
         units: unitNames,
         notes: incident.notes
       })
     });
+
+    if (!response.ok) {
+      throw new Error(`Radio server returned HTTP ${response.status}`);
+    }
+
+    await pool.query(
+      "UPDATE incidents SET radio_status = 'SENT', radio_error = '' WHERE id = $1",
+      [incident.id]
+    );
   } catch (err) {
     console.error("Radio integration error:", err.message);
+    await pool.query(
+      "UPDATE incidents SET radio_status = 'FAILED', radio_error = $1 WHERE id = $2",
+      [String(err.message || err).slice(0, 500), incident.id]
+    );
   }
 }
 
@@ -380,6 +406,55 @@ app.post("/incidents/:id/status", requireRole("DISPATCH"), async (req, res) => {
   }
 
   res.redirect(req.get("referer") || "/dashboard");
+});
+
+
+app.get("/api/alerts", requireLogin, async (req, res) => {
+  let query;
+  let params = [];
+
+  if (req.session.user.role === "FIREFIGHTER") {
+    params = [req.session.user.id];
+    query = `
+      SELECT DISTINCT i.id, i.incident_number, i.priority, i.call_type, i.address,
+        i.notes, i.status, i.created_at, i.dispatched_at,
+        COALESCE(STRING_AGG(DISTINCT u.unit_name, ', '), '') AS units
+      FROM incidents i
+      JOIN incident_units iu ON iu.incident_id = i.id
+      JOIN units u ON u.id = iu.unit_id
+      JOIN unit_crew uc ON uc.unit_id = u.id
+      WHERE i.status <> 'CLOSED' AND uc.user_id = $1
+      GROUP BY i.id
+      ORDER BY i.created_at DESC
+      LIMIT 10
+    `;
+  } else {
+    query = `
+      SELECT i.id, i.incident_number, i.priority, i.call_type, i.address,
+        i.notes, i.status, i.created_at, i.dispatched_at,
+        COALESCE(STRING_AGG(DISTINCT u.unit_name, ', '), '') AS units
+      FROM incidents i
+      LEFT JOIN incident_units iu ON iu.incident_id = i.id
+      LEFT JOIN units u ON u.id = iu.unit_id
+      WHERE i.status <> 'CLOSED'
+      GROUP BY i.id
+      ORDER BY i.created_at DESC
+      LIMIT 10
+    `;
+  }
+
+  const result = await pool.query(query, params);
+  res.json({
+    serverTime: new Date().toISOString(),
+    incidents: result.rows
+  });
+});
+
+app.get("/api/radio/status", requireRole("DISPATCH"), async (req, res) => {
+  res.json({
+    configured: Boolean(clean(process.env.RADIO_API)),
+    endpoint: clean(process.env.RADIO_API) ? "Configured" : "Not configured"
+  });
 });
 
 app.get("/history", requireLogin, async (req, res) => {
