@@ -132,3 +132,9 @@ After it is deployed online, set the CAD's Render environment variable:
 RADIO_API=https://YOUR-RADIO-SERVICE.onrender.com/dispatch
 
 Then redeploy the CAD.
+
+V2.3.1 INCIDENT ROUTE HOTFIX
+----------------------------
+- Restores/duplicates incident creation on POST /incidents and POST /incidents/new.
+- Dashboard dispatch form now posts to /incidents/new.
+- Existing CAD database and RADIO_API integration are unchanged.

@@ -314,7 +314,7 @@ app.get("/dashboard", requireRole("DISPATCH"), async (req, res) => {
   });
 });
 
-app.post("/incidents", requireRole("DISPATCH"), async (req, res) => {
+async function createIncident(req, res) {
   const callType = clean(req.body.call_type);
   const address = clean(req.body.address);
   const notes = clean(req.body.notes);
@@ -371,7 +371,11 @@ app.post("/incidents", requireRole("DISPATCH"), async (req, res) => {
   }
   await sendToRadio(incident, assignedNames.join(", "));
   res.redirect("/dashboard");
-});
+}
+
+// Accept both paths so older/newer dashboard forms continue to work.
+app.post("/incidents", requireRole("DISPATCH"), createIncident);
+app.post("/incidents/new", requireRole("DISPATCH"), createIncident);
 
 app.post("/incidents/:id/status", requireRole("DISPATCH"), async (req, res) => {
   const id = Number(req.params.id);
