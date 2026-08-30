@@ -101,3 +101,13 @@ RADIO_API=https://your-online-radio-server.example.com/dispatch
 
 The existing local radio server can be upgraded/hosted separately, then its public
 /dispatch URL can be placed in Render as the RADIO_API environment variable.
+
+V2.2.1 AUDIO HOTFIX
+-------------------
+- Fixes the dispatch audio button showing ON after a page reload when the browser
+  had actually destroyed the AudioContext.
+- Audio now starts OFF after each page navigation, as required by browser security.
+- Clicking Enable Dispatch Audio plays a two-tone confirmation chirp.
+- Dispatcher hears the selected priority tone immediately when submitting a call.
+- Other logged-in CAD clients receive the tone while their page remains open and
+  Dispatch Audio is enabled.

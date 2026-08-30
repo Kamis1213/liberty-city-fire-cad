@@ -1,6 +1,6 @@
 {
   "name": "liberty-city-fire-cad-v2",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "24/7 deployable Liberty City Fire CAD",
   "main": "app.js",
   "scripts": {
