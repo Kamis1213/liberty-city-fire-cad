@@ -163,3 +163,16 @@ V2.5 STATIONS
 - Units can remain Unassigned if needed.
 - Deleting a station does not delete its apparatus; those units become Unassigned.
 - Existing incidents, users, database records, CAD-to-radio dispatch, and radio PTT remain intact.
+
+
+V2.6 PERSONNEL & ROSTERS
+------------------------
+- New Personnel page for department roster management.
+- Create members with name, rank, callsign, badge number, and home station.
+- Includes the Liberty City FD rank structure.
+- Assign personnel to apparatus and riding positions.
+- Personnel assigned to apparatus appear in the existing Unit Management crew display.
+- Mark personnel Active/Inactive.
+- Dispatch, Command, and Admin can manage roster/staffing.
+- Command/Admin can delete roster members that are not linked to a normal CAD login.
+- Existing stations, units, incidents, database, radio dispatch, and PTT remain intact.

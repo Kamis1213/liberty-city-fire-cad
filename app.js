@@ -99,6 +99,17 @@ async function initDatabase() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS personnel (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      rank TEXT NOT NULL DEFAULT 'Firefighter',
+      callsign TEXT DEFAULT '',
+      badge_number TEXT DEFAULT '',
+      station_id INTEGER REFERENCES stations(id) ON DELETE SET NULL,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS units (
       id SERIAL PRIMARY KEY,
       unit_name TEXT UNIQUE NOT NULL,
@@ -163,6 +174,7 @@ async function initDatabase() {
   await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS radio_status TEXT NOT NULL DEFAULT 'NOT CONFIGURED'`);
   await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS radio_error TEXT DEFAULT ''`);
   await pool.query(`ALTER TABLE units ADD COLUMN IF NOT EXISTS station_id INTEGER REFERENCES stations(id) ON DELETE SET NULL`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS personnel_id INTEGER REFERENCES personnel(id) ON DELETE SET NULL`);
 
   const adminUsername = process.env.ADMIN_USERNAME || "admin";
   const adminPassword = process.env.ADMIN_PASSWORD || "ChangeMe123!";
@@ -663,6 +675,111 @@ app.post("/admin/users/:id/toggle", requireRole("ADMIN"), async (req, res) => {
     [id]
   );
   res.redirect("/admin/users");
+});
+
+app.get("/admin/personnel", requireRole("DISPATCH"), async (req, res) => {
+  const [personnel, stations, units] = await Promise.all([
+    pool.query(`
+      SELECT p.*, s.station_name,
+        uc.unit_id, uc.position, u.unit_name
+      FROM personnel p
+      LEFT JOIN stations s ON s.id = p.station_id
+      LEFT JOIN users usr ON usr.personnel_id = p.id
+      LEFT JOIN unit_crew uc ON uc.user_id = usr.id
+      LEFT JOIN units u ON u.id = uc.unit_id
+      ORDER BY p.active DESC, COALESCE(s.station_name, 'ZZZ'), p.rank, p.name
+    `),
+    pool.query("SELECT * FROM stations ORDER BY station_name"),
+    pool.query("SELECT * FROM units ORDER BY unit_name")
+  ]);
+  res.render("admin-personnel", {
+    personnel: personnel.rows,
+    stations: stations.rows,
+    units: units.rows
+  });
+});
+
+app.post("/admin/personnel", requireRole("DISPATCH"), async (req, res) => {
+  const name = clean(req.body.name);
+  const rank = clean(req.body.rank) || "Firefighter";
+  const callsign = clean(req.body.callsign);
+  const badge = clean(req.body.badge_number);
+  const stationId = Number(req.body.station_id) || null;
+
+  if (name) {
+    await pool.query(
+      `INSERT INTO personnel (name, rank, callsign, badge_number, station_id)
+       VALUES ($1,$2,$3,$4,$5)`,
+      [name, rank, callsign, badge, stationId]
+    );
+  }
+  res.redirect("/admin/personnel");
+});
+
+app.post("/admin/personnel/:id/edit", requireRole("DISPATCH"), async (req, res) => {
+  const id = Number(req.params.id);
+  const name = clean(req.body.name);
+  const rank = clean(req.body.rank) || "Firefighter";
+  const callsign = clean(req.body.callsign);
+  const badge = clean(req.body.badge_number);
+  const stationId = Number(req.body.station_id) || null;
+  const active = req.body.active === "on";
+
+  if (id && name) {
+    await pool.query(
+      `UPDATE personnel
+       SET name=$1, rank=$2, callsign=$3, badge_number=$4, station_id=$5, active=$6
+       WHERE id=$7`,
+      [name, rank, callsign, badge, stationId, active, id]
+    );
+  }
+  res.redirect("/admin/personnel");
+});
+
+app.post("/admin/personnel/:id/delete", requireRole("COMMAND"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (id) {
+    const linked = await pool.query("SELECT id FROM users WHERE personnel_id=$1", [id]);
+    if (!linked.rowCount) await pool.query("DELETE FROM personnel WHERE id=$1", [id]);
+  }
+  res.redirect("/admin/personnel");
+});
+
+app.post("/admin/personnel/:id/staff", requireRole("DISPATCH"), async (req, res) => {
+  const personnelId = Number(req.params.id);
+  const unitId = Number(req.body.unit_id) || null;
+  const position = clean(req.body.position) || "Firefighter";
+
+  if (!personnelId) return res.redirect("/admin/personnel");
+
+  let usr = await pool.query("SELECT id FROM users WHERE personnel_id=$1 LIMIT 1", [personnelId]);
+
+  if (!usr.rowCount) {
+    const p = await pool.query("SELECT * FROM personnel WHERE id=$1", [personnelId]);
+    if (!p.rowCount) return res.redirect("/admin/personnel");
+
+    // Create a disabled CAD identity used only for unit staffing. It cannot log in.
+    const syntheticUsername = `roster_${personnelId}_${Date.now()}`;
+    const impossiblePassword = `$2b$12$DISABLED_${Date.now()}_${Math.random()}`;
+    usr = await pool.query(
+      `INSERT INTO users (username, password_hash, name, rank, role, personnel_id)
+       VALUES ($1,$2,$3,$4,'FIREFIGHTER',$5)
+       RETURNING id`,
+      [syntheticUsername, impossiblePassword, p.rows[0].name, p.rows[0].rank, personnelId]
+    );
+  }
+
+  const userId = usr.rows[0].id;
+  await pool.query("DELETE FROM unit_crew WHERE user_id=$1", [userId]);
+
+  if (unitId) {
+    await pool.query(
+      `INSERT INTO unit_crew (unit_id, user_id, position)
+       VALUES ($1,$2,$3)`,
+      [unitId, userId, position]
+    );
+  }
+  res.redirect("/admin/personnel");
 });
 
 app.get("/admin/stations", requireRole("DISPATCH"), async (req, res) => {
