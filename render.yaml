@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: liberty-city-fire-cad
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: liberty-city-fire-cad-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        value: Fire Commissioner
+
+databases:
+  - name: liberty-city-fire-cad-db
+    plan: starter

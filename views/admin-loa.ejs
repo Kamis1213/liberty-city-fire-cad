@@ -1,0 +1,26 @@
+<%- include("partials/header", { title: "LOA Requests" }) %>
+<section class="card">
+  <h1>LOA Requests</h1>
+  <% if (!requests.length) { %><p class="muted">No LOA requests.</p><% } %>
+  <% requests.forEach(r => { %>
+    <article class="request-card">
+      <div>
+        <h3><%= r.name %> <small><%= r.rank || "" %></small></h3>
+        <p><strong><%= new Date(r.start_date).toLocaleDateString() %> – <%= new Date(r.end_date).toLocaleDateString() %></strong></p>
+        <p><%= r.reason %></p>
+        <p>Status: <strong><%= r.status %></strong></p>
+        <% if (r.review_note) { %><p>Command Note: <%= r.review_note %></p><% } %>
+      </div>
+      <% if (r.status === "PENDING") { %>
+        <form method="post" action="/admin/loa/<%= r.id %>" class="stack compact">
+          <label>Review Note<textarea name="review_note" rows="3"></textarea></label>
+          <div class="actions">
+            <button name="status" value="APPROVED" type="submit">Approve</button>
+            <button name="status" value="DENIED" type="submit" class="danger-btn">Deny</button>
+          </div>
+        </form>
+      <% } %>
+    </article>
+  <% }) %>
+</section>
+<%- include("partials/footer") %>

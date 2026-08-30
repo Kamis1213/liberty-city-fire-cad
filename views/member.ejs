@@ -1,0 +1,69 @@
+<%- include("partials/header", { title: "Member Portal" }) %>
+<div class="grid two">
+  <section class="card">
+    <h1>Member Portal</h1>
+    <p><strong><%= member.name %></strong></p>
+    <p><%= member.rank || "Member" %> — <%= member.role %></p>
+
+    <h2>Apparatus Staffing</h2>
+    <% if (crew) { %>
+      <div class="alert success">Currently staffed on <strong><%= crew.unit_name %></strong> as <strong><%= crew.position %></strong>.</div>
+      <form method="post" action="/member/unstaff">
+        <button class="secondary" type="submit">Leave Apparatus</button>
+      </form>
+    <% } else { %>
+      <form method="post" action="/member/staff" class="stack">
+        <label>Unit
+          <select name="unit_id" required>
+            <option value="">Choose unit</option>
+            <% units.forEach(unit => { %>
+              <option value="<%= unit.id %>"><%= unit.unit_name %> — <%= unit.status %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>Position
+          <select name="position" required>
+            <option>OFFICER</option>
+            <option>DRIVER</option>
+            <option>FIREFIGHTER 1</option>
+            <option>FIREFIGHTER 2</option>
+            <option>ADDITIONAL CREW</option>
+          </select>
+        </label>
+        <button type="submit">Staff Apparatus</button>
+      </form>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <h2>Request Leave of Absence</h2>
+    <form method="post" action="/loa" class="stack">
+      <label>Start Date<input type="date" name="start_date" required></label>
+      <label>End Date<input type="date" name="end_date" required></label>
+      <label>Reason<textarea name="reason" rows="5" required></textarea></label>
+      <button type="submit">Submit LOA Request</button>
+    </form>
+  </section>
+</div>
+
+<section class="card">
+  <h2>My LOA Requests</h2>
+  <% if (!loaRequests.length) { %><p class="muted">No LOA requests submitted.</p><% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Dates</th><th>Reason</th><th>Status</th><th>Command Note</th></tr></thead>
+        <tbody>
+        <% loaRequests.forEach(l => { %>
+          <tr>
+            <td><%= new Date(l.start_date).toLocaleDateString() %> – <%= new Date(l.end_date).toLocaleDateString() %></td>
+            <td><%= l.reason %></td>
+            <td><strong><%= l.status %></strong></td>
+            <td><%= l.review_note || "" %></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+<%- include("partials/footer") %>

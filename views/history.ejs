@@ -1,0 +1,22 @@
+<%- include("partials/header", { title: "Incident History" }) %>
+<section class="card">
+  <h1>Incident History</h1>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Incident</th><th>Type</th><th>Address</th><th>Units</th><th>Status</th><th>Dispatcher</th></tr></thead>
+      <tbody>
+      <% incidents.forEach(i => { %>
+        <tr>
+          <td><strong><%= i.incident_number %></strong><br><small><%= new Date(i.created_at).toLocaleString() %></small></td>
+          <td><%= i.call_type %></td>
+          <td><%= i.address %><br><small><%= i.notes %></small></td>
+          <td><%= i.units || "None" %></td>
+          <td><%= i.status %></td>
+          <td><%= i.dispatcher %></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+<%- include("partials/footer") %>

@@ -1,0 +1,22 @@
+<%- include("partials/header", { title: "MDT" }) %>
+<section class="card">
+  <h1>Mobile Data Terminal</h1>
+  <div class="unit-grid">
+  <% units.forEach(unit => { %>
+    <article class="unit-card large">
+      <h3><%= unit.unit_name %></h3>
+      <div class="status"><%= unit.status %></div>
+      <% if (unit.incident_number) { %>
+        <hr>
+        <strong><%= unit.incident_number %> — <%= unit.call_type %></strong>
+        <p><%= unit.address %></p>
+        <p class="muted"><%= unit.notes %></p>
+        <p>Incident Status: <strong><%= unit.incident_status %></strong></p>
+      <% } else { %>
+        <p class="muted">No active assignment.</p>
+      <% } %>
+    </article>
+  <% }) %>
+  </div>
+</section>
+<%- include("partials/footer") %>

@@ -1,0 +1,37 @@
+<%- include("partials/header", { title: "Unit Management" }) %>
+<div class="grid two">
+  <section class="card">
+    <h1>Add Unit</h1>
+    <form method="post" action="/admin/units" class="stack">
+      <label>Unit Name<input name="unit_name" placeholder="Engine 3" required></label>
+      <label>Type<input name="unit_type" placeholder="ENGINE" required></label>
+      <button type="submit">Add Unit</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Apparatus</h2>
+    <p class="muted">View current status and crew assignments.</p>
+  </section>
+</div>
+
+<section class="card">
+  <div class="unit-grid">
+    <% units.forEach(u => { %>
+      <article class="unit-card large">
+        <h3><%= u.unit_name %></h3>
+        <div><%= u.unit_type %></div>
+        <div class="status"><%= u.status %></div>
+        <hr>
+        <strong>Crew</strong>
+        <% if (!u.crew.length) { %>
+          <p class="muted">No crew staffed.</p>
+        <% } else { %>
+          <% u.crew.forEach(c => { %>
+            <p><%= c.position %> — <%= c.rank %> <%= c.name %></p>
+          <% }) %>
+        <% } %>
+      </article>
+    <% }) %>
+  </div>
+</section>
+<%- include("partials/footer") %>

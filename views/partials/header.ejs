@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= title || "Liberty City Fire CAD" %></title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <div class="brand">LIBERTY CITY FIRE DEPARTMENT</div>
+    <div class="subbrand">Computer Aided Dispatch</div>
+  </div>
+  <% if (user) { %>
+    <div class="userbox">
+      <strong><%= user.name %></strong>
+      <span><%= user.rank || user.role %></span>
+      <a href="/logout">Logout</a>
+    </div>
+  <% } %>
+</header>
+<% if (user) { %>
+<nav class="nav">
+  <% if (user.role !== "FIREFIGHTER") { %><a href="/dashboard">Dispatch</a><% } %>
+  <a href="/mdt">MDT</a>
+  <a href="/member">Member</a>
+  <a href="/history">History</a>
+  <% if (["COMMAND","ADMIN"].includes(user.role)) { %>
+    <a href="/admin/loa">LOA Requests</a>
+    <a href="/admin/units">Units</a>
+  <% } %>
+  <% if (user.role === "ADMIN") { %><a href="/admin/users">Users</a><% } %>
+</nav>
+<% } %>
+<main class="container">
