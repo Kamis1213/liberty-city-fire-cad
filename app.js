@@ -688,7 +688,7 @@ function requireStaffingAccess(req, res, next) {
   next();
 }
 
-app.get("/admin/personnel", requireAuth, async (req, res) => {
+app.get("/admin/personnel", requireLogin, async (req, res) => {
   const [personnel, stations, units] = await Promise.all([
     pool.query(`
       SELECT p.*, s.station_name,
