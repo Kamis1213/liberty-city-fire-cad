@@ -111,3 +111,24 @@ V2.2.1 AUDIO HOTFIX
 - Dispatcher hears the selected priority tone immediately when submitting a call.
 - Other logged-in CAD clients receive the tone while their page remains open and
   Dispatch Audio is enabled.
+
+
+V2.3 VOICE DISPATCH
+-------------------
+- Fire-station-style dual-frequency dispatch tone patterns
+- Different patterns for Priority 1, Priority 2, and Priority 3
+- Spoken browser dispatch after the alert tone
+- Speech includes priority, assigned apparatus, call type, address, incident number,
+  and notes
+- Acknowledge button stops spoken dispatch
+- No external voice service or API key required
+- Uses the browser's built-in Web Speech API
+
+ONLINE RADIO CONNECTION
+-----------------------
+A separate deployable Liberty City Radio Relay v5 package is included separately.
+After it is deployed online, set the CAD's Render environment variable:
+
+RADIO_API=https://YOUR-RADIO-SERVICE.onrender.com/dispatch
+
+Then redeploy the CAD.
