@@ -33,6 +33,9 @@
     <a href="/admin/stations">Stations</a>
     <a href="/admin/personnel">Personnel</a>
   <% } %>
+  <% if (user.role === "FIREFIGHTER" && ["Captain","Lieutenant"].includes(user.rank)) { %>
+    <a href="/admin/personnel">Personnel / Staffing</a>
+  <% } %>
   <% if (["COMMAND","ADMIN"].includes(user.role)) { %>
     <a href="/admin/loa">LOA Requests</a>
   <% } %>

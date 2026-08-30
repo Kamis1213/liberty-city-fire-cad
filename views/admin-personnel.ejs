@@ -9,6 +9,7 @@
 </div>
 
 <div class="grid two">
+  <% if (canManageRoster) { %>
   <section class="card">
     <h2>Add Personnel</h2>
     <form method="post" action="/admin/personnel" class="stack">
@@ -34,9 +35,10 @@
       <button type="submit">+ Add Member</button>
     </form>
   </section>
+  <% } %>
 
   <section class="card">
-    <h2>Roster</h2>
+    <h2>Roster & Staffing</h2>
     <p>Personnel can have a department rank, callsign, badge number, home station, and current apparatus assignment.</p>
     <p class="muted">Staffing an apparatus makes that member appear as crew on the Unit Management screen.</p>
   </section>
@@ -63,6 +65,7 @@
             </div>
           </div>
 
+          <% if (canStaff) { %>
           <form method="post" action="/admin/personnel/<%= p.id %>/staff" class="stack roster-staff-form">
             <label>Current Apparatus
               <select name="unit_id">
@@ -81,7 +84,9 @@
             </label>
             <button type="submit">Assign to Unit</button>
           </form>
+          <% } %>
 
+          <% if (canManageRoster) { %>
           <details>
             <summary>Edit Member</summary>
             <form method="post" action="/admin/personnel/<%= p.id %>/edit" class="stack compact-form">
@@ -110,6 +115,7 @@
               <button class="secondary" type="submit">Save Member</button>
             </form>
           </details>
+          <% } %>
 
           <% if (user.role === "COMMAND" || user.role === "ADMIN") { %>
             <form method="post" action="/admin/personnel/<%= p.id %>/delete"

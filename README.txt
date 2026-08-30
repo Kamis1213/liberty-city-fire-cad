@@ -176,3 +176,11 @@ V2.6 PERSONNEL & ROSTERS
 - Dispatch, Command, and Admin can manage roster/staffing.
 - Command/Admin can delete roster members that are not linked to a normal CAD login.
 - Existing stations, units, incidents, database, radio dispatch, and PTT remain intact.
+
+
+V2.7 COMPANY OFFICER STAFFING
+-----------------------------
+- Captains and Lieutenants can now open Personnel / Staffing and assign members to apparatus.
+- Dispatch, Command, and Admin retain full staffing access.
+- Captain/Lieutenant access is limited to staffing; they cannot create, edit, or delete roster members.
+- Regular firefighter ranks still cannot change apparatus staffing.

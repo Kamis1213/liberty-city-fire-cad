@@ -677,7 +677,18 @@ app.post("/admin/users/:id/toggle", requireRole("ADMIN"), async (req, res) => {
   res.redirect("/admin/users");
 });
 
-app.get("/admin/personnel", requireRole("DISPATCH"), async (req, res) => {
+function canStaffApparatus(user) {
+  if (!user) return false;
+  if (["DISPATCH","COMMAND","ADMIN"].includes(user.role)) return true;
+  return ["Captain","Lieutenant"].includes(user.rank);
+}
+
+function requireStaffingAccess(req, res, next) {
+  if (!canStaffApparatus(req.session.user)) return res.status(403).send("Staffing access denied.");
+  next();
+}
+
+app.get("/admin/personnel", requireAuth, async (req, res) => {
   const [personnel, stations, units] = await Promise.all([
     pool.query(`
       SELECT p.*, s.station_name,
@@ -695,7 +706,9 @@ app.get("/admin/personnel", requireRole("DISPATCH"), async (req, res) => {
   res.render("admin-personnel", {
     personnel: personnel.rows,
     stations: stations.rows,
-    units: units.rows
+    units: units.rows,
+    canStaff: canStaffApparatus(req.session.user),
+    canManageRoster: ["DISPATCH","COMMAND","ADMIN"].includes(req.session.user.role)
   });
 });
 
@@ -745,7 +758,7 @@ app.post("/admin/personnel/:id/delete", requireRole("COMMAND"), async (req, res)
   res.redirect("/admin/personnel");
 });
 
-app.post("/admin/personnel/:id/staff", requireRole("DISPATCH"), async (req, res) => {
+app.post("/admin/personnel/:id/staff", requireStaffingAccess, async (req, res) => {
   const personnelId = Number(req.params.id);
   const unitId = Number(req.body.unit_id) || null;
   const position = clean(req.body.position) || "Firefighter";
