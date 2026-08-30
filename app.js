@@ -52,6 +52,7 @@ app.use(
 
 const roleRank = {
   FIREFIGHTER: 1,
+  OFFICER: 1,
   DISPATCH: 2,
   COMMAND: 3,
   ADMIN: 4
@@ -275,7 +276,7 @@ app.use((req, res, next) => {
 
 app.get("/", (req, res) => {
   if (!req.session.user) return res.redirect("/login");
-  if (req.session.user.role === "FIREFIGHTER") return res.redirect("/member");
+  if (["FIREFIGHTER","OFFICER"].includes(req.session.user.role)) return res.redirect("/member");
   res.redirect("/dashboard");
 });
 
@@ -307,7 +308,7 @@ app.post("/login", async (req, res) => {
     role: user.role
   };
 
-  if (user.role === "FIREFIGHTER") return res.redirect("/member");
+  if (["FIREFIGHTER","OFFICER"].includes(user.role)) return res.redirect("/member");
   res.redirect("/dashboard");
 });
 
@@ -626,7 +627,7 @@ app.get("/admin/users", requireRole("ADMIN"), async (req, res) => {
   const result = await pool.query(
     "SELECT id, username, name, rank, role, active, created_at FROM users ORDER BY name"
   );
-  res.render("admin-users", { users: result.rows, error: null });
+  res.render("admin-users", { users: result.rows, error: null, ranks: ["Fire Commissioner","Deputy Fire Commissioner","Chief of Department","Deputy Chief","Assistant Chief","Division Chief","Battalion Chief","Captain","Lieutenant","Engineer / Driver Operator","Senior Firefighter","Firefighter III","Firefighter II","Firefighter I","Probationary Firefighter","Fire Cadet / Recruit"] });
 });
 
 app.post("/admin/users", requireRole("ADMIN"), async (req, res) => {
@@ -642,7 +643,8 @@ app.post("/admin/users", requireRole("ADMIN"), async (req, res) => {
     );
     return res.status(400).render("admin-users", {
       users: result.rows,
-      error: "All required fields must be completed."
+      error: "All required fields must be completed.",
+      ranks: ["Fire Commissioner","Deputy Fire Commissioner","Chief of Department","Deputy Chief","Assistant Chief","Division Chief","Battalion Chief","Captain","Lieutenant","Engineer / Driver Operator","Senior Firefighter","Firefighter III","Firefighter II","Firefighter I","Probationary Firefighter","Fire Cadet / Recruit"]
     });
   }
 
@@ -659,7 +661,8 @@ app.post("/admin/users", requireRole("ADMIN"), async (req, res) => {
     );
     return res.status(400).render("admin-users", {
       users: result.rows,
-      error: err.code === "23505" ? "That username already exists." : err.message
+      error: err.code === "23505" ? "That username already exists." : err.message,
+      ranks: ["Fire Commissioner","Deputy Fire Commissioner","Chief of Department","Deputy Chief","Assistant Chief","Division Chief","Battalion Chief","Captain","Lieutenant","Engineer / Driver Operator","Senior Firefighter","Firefighter III","Firefighter II","Firefighter I","Probationary Firefighter","Fire Cadet / Recruit"]
     });
   }
 
@@ -679,7 +682,7 @@ app.post("/admin/users/:id/toggle", requireRole("ADMIN"), async (req, res) => {
 
 function canStaffApparatus(user) {
   if (!user) return false;
-  if (["DISPATCH","COMMAND","ADMIN"].includes(user.role)) return true;
+  if (["OFFICER","DISPATCH","COMMAND","ADMIN"].includes(user.role)) return true;
   return ["Captain","Lieutenant"].includes(user.rank);
 }
 

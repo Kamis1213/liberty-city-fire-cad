@@ -7,10 +7,17 @@
       <label>Username<input name="username" required></label>
       <label>Password<input name="password" type="password" required></label>
       <label>Full Name<input name="name" required></label>
-      <label>Rank<input name="rank" placeholder="Firefighter I"></label>
+      <label>Rank
+        <select name="rank" required>
+          <% ranks.forEach(r => { %>
+            <option value="<%= r %>"><%= r %></option>
+          <% }) %>
+        </select>
+      </label>
       <label>Role
         <select name="role" required>
           <option value="FIREFIGHTER">FIREFIGHTER</option>
+          <option value="OFFICER">OFFICER</option>
           <option value="DISPATCH">DISPATCH</option>
           <option value="COMMAND">COMMAND</option>
           <option value="ADMIN">ADMIN</option>
@@ -23,6 +30,7 @@
   <section class="card">
     <h2>Permissions</h2>
     <p><strong>FIREFIGHTER:</strong> Member portal, MDT, history, LOA.</p>
+    <p><strong>OFFICER:</strong> Company officer access for Captains and Lieutenants. Can manage apparatus staffing without Dispatch or Admin permissions.</p>
     <p><strong>DISPATCH:</strong> Dispatch dashboard plus firefighter access.</p>
     <p><strong>COMMAND:</strong> LOA review and unit management.</p>
     <p><strong>ADMIN:</strong> Full access including user accounts.</p>

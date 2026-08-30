@@ -184,3 +184,12 @@ V2.7 COMPANY OFFICER STAFFING
 - Dispatch, Command, and Admin retain full staffing access.
 - Captain/Lieutenant access is limited to staffing; they cannot create, edit, or delete roster members.
 - Regular firefighter ranks still cannot change apparatus staffing.
+
+
+V2.7.3 OFFICER ROLE
+-------------------
+- Added one OFFICER account role for both Captains and Lieutenants.
+- Rank still identifies whether the member is Captain or Lieutenant.
+- OFFICER can use Personnel / Staffing.
+- OFFICER does not receive Dispatch, Command, or Admin permissions.
+- Existing Captain/Lieutenant accounts using FIREFIGHTER role remain compatible.
