@@ -15,12 +15,20 @@
       <label>Notes<textarea name="notes" rows="4" placeholder="Caller information / hazards / details"></textarea></label>
       <fieldset>
         <legend>Dispatch Units</legend>
-        <div class="checkbox-grid">
-          <% units.forEach(unit => { %>
-            <label class="check">
-              <input type="checkbox" name="unit_ids" value="<%= unit.id %>" <%= unit.status !== "AVAILABLE" ? "disabled" : "" %>>
-              <span><strong><%= unit.unit_name %></strong><br><small><%= unit.status %></small></span>
-            </label>
+        <div class="station-dispatch-groups">
+          <% const stationNames = [...new Set(units.map(u => u.station_name || "Unassigned"))]; %>
+          <% stationNames.forEach(stationName => { %>
+            <div class="station-dispatch-group">
+              <div class="station-heading"><%= stationName %></div>
+              <div class="checkbox-grid">
+                <% units.filter(u => (u.station_name || "Unassigned") === stationName).forEach(unit => { %>
+                  <label class="check">
+                    <input type="checkbox" name="unit_ids" value="<%= unit.id %>" <%= unit.status !== "AVAILABLE" ? "disabled" : "" %>>
+                    <span><strong><%= unit.unit_name %></strong><br><small><%= unit.unit_type %> · <%= unit.status %></small></span>
+                  </label>
+                <% }) %>
+              </div>
+            </div>
           <% }) %>
         </div>
       </fieldset>
@@ -30,12 +38,20 @@
 
   <section class="card">
     <h2>Unit Status</h2>
-    <div class="unit-grid">
-      <% units.forEach(unit => { %>
-        <div class="unit-card">
-          <strong><%= unit.unit_name %></strong>
-          <span><%= unit.unit_type %></span>
-          <span class="status"><%= unit.status %></span>
+    <div class="station-status-list">
+      <% const statusStations = [...new Set(units.map(u => u.station_name || "Unassigned"))]; %>
+      <% statusStations.forEach(stationName => { %>
+        <div class="station-status-group">
+          <div class="station-heading"><%= stationName %></div>
+          <div class="unit-grid">
+            <% units.filter(u => (u.station_name || "Unassigned") === stationName).forEach(unit => { %>
+              <div class="unit-card">
+                <strong><%= unit.unit_name %></strong>
+                <span><%= unit.unit_type %></span>
+                <span class="status"><%= unit.status %></span>
+              </div>
+            <% }) %>
+          </div>
         </div>
       <% }) %>
     </div>

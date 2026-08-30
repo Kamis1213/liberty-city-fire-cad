@@ -30,6 +30,7 @@
   <a href="/history">History</a>
   <% if (["DISPATCH","COMMAND","ADMIN"].includes(user.role)) { %>
     <a href="/admin/units">Units</a>
+    <a href="/admin/stations">Stations</a>
   <% } %>
   <% if (["COMMAND","ADMIN"].includes(user.role)) { %>
     <a href="/admin/loa">LOA Requests</a>

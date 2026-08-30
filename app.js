@@ -91,12 +91,21 @@ async function initDatabase() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS stations (
+      id SERIAL PRIMARY KEY,
+      station_name TEXT UNIQUE NOT NULL,
+      address TEXT DEFAULT '',
+      notes TEXT DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS units (
       id SERIAL PRIMARY KEY,
       unit_name TEXT UNIQUE NOT NULL,
       unit_type TEXT DEFAULT 'ENGINE',
       status TEXT NOT NULL DEFAULT 'AVAILABLE',
       assigned_incident INTEGER,
+      station_id INTEGER REFERENCES stations(id) ON DELETE SET NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
@@ -153,6 +162,7 @@ async function initDatabase() {
   await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS onscene_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS radio_status TEXT NOT NULL DEFAULT 'NOT CONFIGURED'`);
   await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS radio_error TEXT DEFAULT ''`);
+  await pool.query(`ALTER TABLE units ADD COLUMN IF NOT EXISTS station_id INTEGER REFERENCES stations(id) ON DELETE SET NULL`);
 
   const adminUsername = process.env.ADMIN_USERNAME || "admin";
   const adminPassword = process.env.ADMIN_PASSWORD || "ChangeMe123!";
@@ -305,7 +315,12 @@ app.get("/dashboard", requireRole("DISPATCH"), async (req, res) => {
       GROUP BY i.id
       ORDER BY i.created_at DESC
     `),
-    pool.query("SELECT * FROM units ORDER BY unit_name")
+    pool.query(`
+      SELECT u.*, s.station_name
+      FROM units u
+      LEFT JOIN stations s ON s.id = u.station_id
+      ORDER BY COALESCE(s.station_name, 'ZZZ'), u.unit_name
+    `)
   ]);
 
   res.render("dashboard", {
@@ -650,26 +665,83 @@ app.post("/admin/users/:id/toggle", requireRole("ADMIN"), async (req, res) => {
   res.redirect("/admin/users");
 });
 
-app.get("/admin/units", requireRole("DISPATCH"), async (req, res) => {
-  const units = await pool.query(`
-    SELECT u.*,
-      COALESCE(
-        JSON_AGG(
-          JSON_BUILD_OBJECT(
-            'name', us.name,
-            'rank', us.rank,
-            'position', uc.position
-          )
-        ) FILTER (WHERE uc.id IS NOT NULL),
-        '[]'
-      ) AS crew
-    FROM units u
-    LEFT JOIN unit_crew uc ON uc.unit_id = u.id
-    LEFT JOIN users us ON us.id = uc.user_id
-    GROUP BY u.id
-    ORDER BY u.unit_name
+app.get("/admin/stations", requireRole("DISPATCH"), async (req, res) => {
+  const stations = await pool.query(`
+    SELECT s.*,
+      COUNT(u.id)::int AS unit_count
+    FROM stations s
+    LEFT JOIN units u ON u.station_id = s.id
+    GROUP BY s.id
+    ORDER BY s.station_name
   `);
-  res.render("admin-units", { units: units.rows });
+  res.render("admin-stations", { stations: stations.rows });
+});
+
+app.post("/admin/stations", requireRole("DISPATCH"), async (req, res) => {
+  const name = clean(req.body.station_name);
+  const address = clean(req.body.address);
+  const notes = clean(req.body.notes);
+  if (name) {
+    await pool.query(
+      `INSERT INTO stations (station_name, address, notes)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (station_name) DO NOTHING`,
+      [name, address, notes]
+    );
+  }
+  res.redirect("/admin/stations");
+});
+
+app.post("/admin/stations/:id/edit", requireRole("DISPATCH"), async (req, res) => {
+  const id = Number(req.params.id);
+  const name = clean(req.body.station_name);
+  const address = clean(req.body.address);
+  const notes = clean(req.body.notes);
+  if (id && name) {
+    await pool.query(
+      `UPDATE stations
+       SET station_name = $1, address = $2, notes = $3
+       WHERE id = $4`,
+      [name, address, notes, id]
+    ).catch(err => {
+      if (err.code !== "23505") throw err;
+    });
+  }
+  res.redirect("/admin/stations");
+});
+
+app.post("/admin/stations/:id/delete", requireRole("COMMAND"), async (req, res) => {
+  const id = Number(req.params.id);
+  if (id) {
+    await pool.query(`DELETE FROM stations WHERE id = $1`, [id]);
+  }
+  res.redirect("/admin/stations");
+});
+
+app.get("/admin/units", requireRole("DISPATCH"), async (req, res) => {
+  const [units, stations] = await Promise.all([
+    pool.query(`
+      SELECT u.*, s.station_name,
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'name', us.name,
+              'rank', us.rank,
+              'position', uc.position
+            )
+          ) FILTER (WHERE uc.id IS NOT NULL),
+          '[]'
+        ) AS crew
+      FROM units u
+      LEFT JOIN stations s ON s.id = u.station_id
+      LEFT JOIN unit_crew uc ON uc.unit_id = u.id
+      LEFT JOIN users us ON us.id = uc.user_id
+      GROUP BY u.id, s.station_name
+      ORDER BY COALESCE(s.station_name, 'ZZZ'), u.unit_name
+    `),
+    pool.query("SELECT * FROM stations ORDER BY station_name")
+  ]);
+  res.render("admin-units", { units: units.rows, stations: stations.rows });
 });
 
 app.post("/admin/units", requireRole("DISPATCH"), async (req, res) => {
@@ -677,13 +749,14 @@ app.post("/admin/units", requireRole("DISPATCH"), async (req, res) => {
   const requestedType = clean(req.body.unit_type).toUpperCase();
   const allowedTypes = ["ENGINE","LADDER","TRUCK","RESCUE","SQUAD","MEDIC","AMBULANCE","BATTALION","COMMAND","HAZMAT","MARINE","UTILITY","OTHER"];
   const type = allowedTypes.includes(requestedType) ? requestedType : "OTHER";
+  const stationId = Number(req.body.station_id) || null;
 
   if (name) {
     await pool.query(
-      `INSERT INTO units (unit_name, unit_type)
-       VALUES ($1, $2)
+      `INSERT INTO units (unit_name, unit_type, station_id)
+       VALUES ($1, $2, $3)
        ON CONFLICT (unit_name) DO NOTHING`,
-      [name, type]
+      [name, type, stationId]
     );
   }
   res.redirect("/admin/units");
@@ -695,11 +768,12 @@ app.post("/admin/units/:id/edit", requireRole("DISPATCH"), async (req, res) => {
   const requestedType = clean(req.body.unit_type).toUpperCase();
   const allowedTypes = ["ENGINE","LADDER","TRUCK","RESCUE","SQUAD","MEDIC","AMBULANCE","BATTALION","COMMAND","HAZMAT","MARINE","UTILITY","OTHER"];
   const type = allowedTypes.includes(requestedType) ? requestedType : "OTHER";
+  const stationId = Number(req.body.station_id) || null;
 
   if (id && name) {
     await pool.query(
-      `UPDATE units SET unit_name = $1, unit_type = $2 WHERE id = $3`,
-      [name, type, id]
+      `UPDATE units SET unit_name = $1, unit_type = $2, station_id = $3 WHERE id = $4`,
+      [name, type, stationId, id]
     ).catch(err => {
       if (err.code !== "23505") throw err;
     });

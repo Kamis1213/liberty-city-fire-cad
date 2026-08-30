@@ -151,3 +151,15 @@ V2.4 UNIT BUILDER
 - Command/Admin can delete units when they are not assigned to an incident.
 - New units automatically appear on the Dispatch screen.
 - Existing database, incidents, users, radio integration, and PTT system are unchanged.
+
+
+V2.5 STATIONS
+-------------
+- Create and edit fire stations inside the CAD.
+- Add station name, address, and notes.
+- Assign each apparatus to a station from Unit Management.
+- Dispatch screen groups selectable apparatus by station.
+- Unit Status panel is also grouped by station.
+- Units can remain Unassigned if needed.
+- Deleting a station does not delete its apparatus; those units become Unassigned.
+- Existing incidents, users, database records, CAD-to-radio dispatch, and radio PTT remain intact.

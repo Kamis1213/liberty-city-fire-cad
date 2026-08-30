@@ -1,0 +1,82 @@
+<%- include("partials/header", { title: "Station Management" }) %>
+
+<div class="page-heading">
+  <div>
+    <h1>Station Management</h1>
+    <p class="muted">Create fire stations and organize apparatus by station.</p>
+  </div>
+  <a class="button-link secondary-link" href="/admin/units">Manage Units</a>
+</div>
+
+<div class="grid two">
+  <section class="card">
+    <h2>Create Station</h2>
+    <form method="post" action="/admin/stations" class="stack">
+      <label>
+        Station Name
+        <input name="station_name" placeholder="Station 1" required maxlength="80">
+      </label>
+      <label>
+        Address
+        <input name="address" placeholder="100 Liberty Ave" maxlength="160">
+      </label>
+      <label>
+        Notes
+        <textarea name="notes" rows="3" placeholder="Downtown station / headquarters / special units"></textarea>
+      </label>
+      <button type="submit">+ Create Station</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Station Assignment</h2>
+    <p>After you make a station, go to <strong>Units</strong> and assign each Engine, Ladder, Rescue, Medic, or Command unit to it.</p>
+    <p class="muted">The Dispatch screen will automatically group your apparatus by station.</p>
+  </section>
+</div>
+
+<section class="card">
+  <h2>Fire Stations</h2>
+
+  <% if (!stations.length) { %>
+    <p class="muted">No stations have been created yet.</p>
+  <% } else { %>
+    <div class="station-grid">
+      <% stations.forEach(station => { %>
+        <article class="unit-card large station-card">
+          <div class="unit-card-head">
+            <div>
+              <div class="unit-type-tag"><%= station.unit_count %> UNIT<%= station.unit_count === 1 ? "" : "S" %></div>
+              <h3><%= station.station_name %></h3>
+            </div>
+          </div>
+
+          <form method="post" action="/admin/stations/<%= station.id %>/edit" class="stack compact-form">
+            <label>
+              Station Name
+              <input name="station_name" value="<%= station.station_name %>" required>
+            </label>
+            <label>
+              Address
+              <input name="address" value="<%= station.address || "" %>">
+            </label>
+            <label>
+              Notes
+              <textarea name="notes" rows="2"><%= station.notes || "" %></textarea>
+            </label>
+            <button class="secondary" type="submit">Save Station</button>
+          </form>
+
+          <% if (user.role === "COMMAND" || user.role === "ADMIN") { %>
+            <form method="post" action="/admin/stations/<%= station.id %>/delete"
+                  onsubmit="return confirm('Delete <%= station.station_name %>? Units will become Unassigned.');">
+              <button class="danger-btn full-width" type="submit">Delete Station</button>
+            </form>
+          <% } %>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<%- include("partials/footer") %>

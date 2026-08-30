@@ -278,3 +278,40 @@ legend { color: var(--accent2); font-weight: 800; }
     flex-direction:column;
   }
 }
+
+
+/* v2.5 Station Management */
+.station-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:14px;
+}
+.station-card { gap:12px; }
+.station-label {
+  margin-top:4px;
+  color:var(--muted);
+  font-size:.82rem;
+  font-weight:700;
+}
+.station-dispatch-groups,
+.station-status-list {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.station-dispatch-group,
+.station-status-group {
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:10px;
+  background:rgba(255,255,255,.02);
+}
+.station-heading {
+  font-size:.82rem;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  margin-bottom:9px;
+  padding-bottom:7px;
+  border-bottom:1px solid var(--line);
+}

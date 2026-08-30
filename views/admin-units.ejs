@@ -36,6 +36,16 @@
         </select>
       </label>
 
+      <label>
+        Station
+        <select name="station_id">
+          <option value="">Unassigned</option>
+          <% stations.forEach(st => { %>
+            <option value="<%= st.id %>"><%= st.station_name %></option>
+          <% }) %>
+        </select>
+      </label>
+
       <button type="submit">+ Create Unit</button>
     </form>
   </section>
@@ -62,6 +72,7 @@
           <div>
             <div class="unit-type-tag"><%= u.unit_type %></div>
             <h3><%= u.unit_name %></h3>
+            <div class="station-label"><%= u.station_name || "Unassigned Station" %></div>
           </div>
           <div class="status status-pill status-<%= String(u.status).toLowerCase().replaceAll(" ","-") %>"><%= u.status %></div>
         </div>
@@ -76,6 +87,15 @@
             <select name="unit_type">
               <% ["ENGINE","LADDER","TRUCK","RESCUE","SQUAD","MEDIC","AMBULANCE","BATTALION","COMMAND","HAZMAT","MARINE","UTILITY","OTHER"].forEach(t => { %>
                 <option value="<%= t %>" <%= u.unit_type === t ? "selected" : "" %>><%= t %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label>
+            Station
+            <select name="station_id">
+              <option value="">Unassigned</option>
+              <% stations.forEach(st => { %>
+                <option value="<%= st.id %>" <%= Number(u.station_id) === Number(st.id) ? "selected" : "" %>><%= st.station_name %></option>
               <% }) %>
             </select>
           </label>
