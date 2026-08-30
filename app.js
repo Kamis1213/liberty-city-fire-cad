@@ -762,7 +762,7 @@ app.post("/admin/personnel/:id/staff", requireRole("DISPATCH"), async (req, res)
     const syntheticUsername = `roster_${personnelId}_${Date.now()}`;
     const impossiblePassword = `$2b$12$DISABLED_${Date.now()}_${Math.random()}`;
     usr = await pool.query(
-      `INSERT INTO users (username, password_hash, name, rank, role, personnel_id)
+      `INSERT INTO users (username, password, name, rank, role, personnel_id)
        VALUES ($1,$2,$3,$4,'FIREFIGHTER',$5)
        RETURNING id`,
       [syntheticUsername, impossiblePassword, p.rows[0].name, p.rows[0].rank, personnelId]
