@@ -1,0 +1,34 @@
+<%- include("partials/header", { title: "Officer CAD" }) %>
+<div class="officer-console">
+<div class="console-toolbar">
+<div><span class="console-label">CALLSIGN</span><strong><%= user.callsign %></strong></div>
+<div><span class="console-label">UNIT</span><strong><%= crew.unit_name %></strong></div>
+<div><span class="console-label">DEPARTMENT</span><strong>LCFD</strong></div>
+<div><span class="console-label">STATUS</span><strong class="status-pill"><%= crew.unit_status %></strong></div>
+<div class="toolbar-actions"><a class="console-link" href="/reports">RECORDS</a><a class="console-link" href="/select-mode">SWITCH MODE</a></div>
+</div>
+
+<section class="console-panel">
+<div class="console-panel-title">ACTIVE CALLS</div>
+<div class="console-table-wrap"><table class="console-table"><thead><tr><th>CODE</th><th>CALL TITLE</th><th>ADDRESS</th><th>UNITS</th><th>STATUS</th></tr></thead><tbody>
+<% if(!incidents.length){ %><tr><td colspan="5" class="empty-console">NO ACTIVE INCIDENTS</td></tr><% } %>
+<% incidents.forEach(i=>{ %><tr><td><%= i.priority %></td><td><strong><%= i.call_type %></strong></td><td><%= i.address %></td><td><%= i.units || "—" %></td><td><span class="status-pill"><%= i.status %></span></td></tr><% }) %>
+</tbody></table></div>
+</section>
+
+<section class="console-panel unit-control-panel">
+<div class="console-panel-title">MY UNIT · <%= crew.unit_name %> · <%= crew.position %></div>
+<form method="post" action="/mdt/units/<%= crew.unit_id %>/status" class="console-status-buttons">
+<button name="status" value="EN ROUTE">EN ROUTE</button><button name="status" value="ON SCENE">ON SCENE</button><button name="status" value="TRANSPORTING">TRANSPORTING</button><button name="status" value="AT HOSPITAL">AT HOSPITAL</button><button name="status" value="AVAILABLE">AVAILABLE</button><button name="status" value="OUT OF SERVICE" class="danger">OOS</button>
+</form>
+</section>
+
+<section class="console-panel">
+<div class="console-panel-title">LIVE APPARATUS / PERSONNEL</div>
+<div class="console-table-wrap"><table class="console-table"><thead><tr><th>UNIT</th><th>LOCATION</th><th>CREW</th><th>STATUS</th></tr></thead><tbody>
+<% roster.forEach(r=>{ %><tr class="<%= r.id===crew.unit_id ? 'my-unit-row' : '' %>"><td><strong><%= r.unit_name %></strong></td><td><%= r.station_name || "DISTRICT" %></td><td><%= r.crew || "UNSTAFFED" %></td><td><span class="status-pill"><%= r.status %></span></td></tr><% }) %>
+</tbody></table></div>
+</section>
+<form method="post" action="/officer/unstaff" class="off-duty-form"><button class="danger" type="submit">GO OFF DUTY</button></form>
+</div>
+<%- include("partials/footer") %>

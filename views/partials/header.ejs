@@ -15,7 +15,7 @@
   </div>
   <% if (user) { %>
     <div class="userbox">
-      <strong><%= user.name %></strong>
+      <strong><%= user.callsign ? user.callsign + " · " : "" %><%= user.name %></strong>
       <span><%= user.rank || user.role %></span>
       <button id="enable-audio" class="audio-btn" type="button">Enable Dispatch Audio</button>
       <a href="/logout">Logout</a>
@@ -23,7 +23,7 @@
   <% } %>
 </header>
 <% if (user) { %>
-<nav class="nav">
+<nav class="nav"><a href="/select-mode">Mode</a>
   <% if (!["FIREFIGHTER","OFFICER"].includes(user.role)) { %><a href="/dashboard">Dispatch</a><% } %>
   <a href="/mdt">MDT</a>
   <a href="/member">Member</a>

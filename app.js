@@ -304,8 +304,9 @@ app.use((req, res, next) => {
 
 app.get("/", (req, res) => {
   if (!req.session.user) return res.redirect("/login");
-  if (["FIREFIGHTER","OFFICER"].includes(req.session.user.role)) return res.redirect("/member");
-  res.redirect("/dashboard");
+  if (!req.session.mode) return res.redirect("/select-mode");
+  if (req.session.mode === "OFFICER") return res.redirect("/officer");
+  return res.redirect("/dashboard");
 });
 
 app.get("/login", (req, res) => {
@@ -315,6 +316,11 @@ app.get("/login", (req, res) => {
 app.post("/login", async (req, res) => {
   const username = clean(req.body.username);
   const password = String(req.body.password || "");
+  const callsign = clean(req.body.callsign);
+
+  if (!callsign) {
+    return res.status(400).render("login", { error: "Enter your callsign." });
+  }
 
   const result = await pool.query(
     "SELECT * FROM users WHERE username = $1 AND active = TRUE",
@@ -333,11 +339,101 @@ app.post("/login", async (req, res) => {
     username: user.username,
     name: user.name,
     rank: user.rank,
-    role: user.role
+    role: user.role,
+    callsign
   };
+  req.session.mode = null;
 
-  if (["FIREFIGHTER","OFFICER"].includes(user.role)) return res.redirect("/member");
-  res.redirect("/dashboard");
+  res.redirect("/select-mode");
+});
+
+
+app.get("/select-mode", requireLogin, (req, res) => {
+  const role = req.session.user.role;
+  const canDispatch = ["DISPATCH","COMMAND","ADMIN"].includes(role);
+  const canOfficer = ["OFFICER","COMMAND","ADMIN"].includes(role) ||
+    (role === "FIREFIGHTER" && ["CAPTAIN","LIEUTENANT"].includes(String(req.session.user.rank || "").toUpperCase()));
+  res.render("mode-select", { canDispatch, canOfficer });
+});
+
+app.post("/select-mode", requireLogin, (req, res) => {
+  const mode = clean(req.body.mode).toUpperCase();
+  const role = req.session.user.role;
+  const canDispatch = ["DISPATCH","COMMAND","ADMIN"].includes(role);
+  const canOfficer = ["OFFICER","COMMAND","ADMIN"].includes(role) ||
+    (role === "FIREFIGHTER" && ["CAPTAIN","LIEUTENANT"].includes(String(req.session.user.rank || "").toUpperCase()));
+
+  if (mode === "DISPATCH" && canDispatch) {
+    req.session.mode = "DISPATCH";
+    return res.redirect("/dashboard");
+  }
+  if (mode === "OFFICER" && canOfficer) {
+    req.session.mode = "OFFICER";
+    return res.redirect("/officer");
+  }
+  return res.status(403).send("That CAD mode is not authorized for this account.");
+});
+
+app.get("/officer", requireLogin, async (req, res) => {
+  if (req.session.mode !== "OFFICER") return res.redirect("/select-mode");
+
+  const [userResult, crewResult, stationsResult, unitsResult, incidentsResult, rosterResult] = await Promise.all([
+    pool.query("SELECT * FROM users WHERE id=$1", [req.session.user.id]),
+    pool.query(`SELECT uc.*, u.unit_name, u.status AS unit_status, u.assigned_incident, s.station_name
+                FROM unit_crew uc JOIN units u ON u.id=uc.unit_id
+                LEFT JOIN stations s ON s.id=u.station_id
+                WHERE uc.user_id=$1`, [req.session.user.id]),
+    pool.query("SELECT * FROM stations ORDER BY station_name"),
+    pool.query(`SELECT u.*, s.station_name FROM units u LEFT JOIN stations s ON s.id=u.station_id
+                ORDER BY COALESCE(s.station_name,'ZZZ'),u.unit_name`),
+    pool.query(`SELECT i.*,
+                COALESCE(STRING_AGG(u.unit_name, ', ' ORDER BY u.unit_name), '') AS units
+                FROM incidents i
+                LEFT JOIN incident_units iu ON iu.incident_id=i.id
+                LEFT JOIN units u ON u.id=iu.unit_id
+                WHERE i.status <> 'CLOSED'
+                GROUP BY i.id ORDER BY i.created_at DESC`),
+    pool.query(`SELECT u.id,u.unit_name,u.status,s.station_name,
+                COALESCE(STRING_AGG(us.name || ' — ' || uc.position, ', ' ORDER BY uc.position),'') AS crew
+                FROM units u LEFT JOIN stations s ON s.id=u.station_id
+                LEFT JOIN unit_crew uc ON uc.unit_id=u.id
+                LEFT JOIN users us ON us.id=uc.user_id
+                GROUP BY u.id,s.station_name ORDER BY COALESCE(s.station_name,'ZZZ'),u.unit_name`)
+  ]);
+
+  const member=userResult.rows[0];
+  const crew=crewResult.rows[0] || null;
+
+  if (!member.on_duty || !crew) {
+    return res.render("officer-staffing", {
+      member, stations: stationsResult.rows, units: unitsResult.rows
+    });
+  }
+
+  res.render("officer-cad", {
+    member, crew, incidents: incidentsResult.rows, roster: rosterResult.rows
+  });
+});
+
+app.post("/officer/staff", requireLogin, async (req,res) => {
+  if (req.session.mode !== "OFFICER") return res.redirect("/select-mode");
+  const unitId=Number(req.body.unit_id);
+  const stationId=Number(req.body.station_id)||null;
+  const position=clean(req.body.position);
+  if(!unitId || !position) return res.redirect("/officer");
+  await pool.query("DELETE FROM unit_crew WHERE user_id=$1",[req.session.user.id]);
+  await pool.query("INSERT INTO unit_crew (unit_id,user_id,position) VALUES ($1,$2,$3)",[unitId,req.session.user.id,position]);
+  await pool.query(`UPDATE users SET unit_id=$1,position=$2,station_id=$3,on_duty=TRUE,
+                    duty_started_at=COALESCE(duty_started_at,NOW()) WHERE id=$4`,
+                    [unitId,position,stationId,req.session.user.id]);
+  res.redirect("/officer");
+});
+
+app.post("/officer/unstaff", requireLogin, async (req,res) => {
+  await pool.query("DELETE FROM unit_crew WHERE user_id=$1",[req.session.user.id]);
+  await pool.query(`UPDATE users SET unit_id=NULL,position='',station_id=NULL,on_duty=FALSE,duty_started_at=NULL WHERE id=$1`,
+                   [req.session.user.id]);
+  res.redirect("/officer");
 });
 
 app.get("/logout", (req, res) => {

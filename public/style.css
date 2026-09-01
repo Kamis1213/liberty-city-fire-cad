@@ -340,3 +340,16 @@ legend { color: var(--accent2); font-weight: 800; }
 
 /* v3.0 */
 .mdt-buttons{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:8px;margin-top:12px}.mdt-buttons button{margin:0}.crew-line{display:block;color:var(--muted);margin-top:6px}.crew-chips{display:flex;flex-wrap:wrap;gap:8px}.crew-chips span{padding:8px 10px;border:1px solid var(--line);border-radius:8px}.danger{background:#8b1b1b!important;color:#fff!important}
+
+/* v3.1 session selector + officer CAD */
+.mode-wrap{max-width:900px;margin:7vh auto}.mode-card{text-align:center}.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:28px}
+.mode-button{min-height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-size:25px;border:2px solid #315d96;background:#102844;color:#fff;border-radius:8px}
+.mode-button:hover:not(:disabled){transform:translateY(-2px);border-color:#6da8ef}.mode-button:disabled{opacity:.28;cursor:not-allowed}.mode-icon{font-size:54px}.mode-button small{font-size:13px;font-weight:normal;color:#b8cbe2}.mode-note{margin-top:18px}
+.staffing-card{max-width:720px;margin:5vh auto}.console-kicker{font:700 12px monospace;color:#77b8ff;letter-spacing:1px}
+.officer-console{font-family:Consolas,"Courier New",monospace;background:#0b0d10;border:1px solid #315d96;min-height:72vh}
+.console-toolbar{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr)) auto;background:#234c80;border-bottom:2px solid #4777b4;color:#fff}
+.console-toolbar>div{padding:14px;border-right:1px solid #5377a6}.console-label{display:block;font-size:10px;color:#b8d3f1;margin-bottom:5px}.toolbar-actions{display:flex!important;gap:8px;align-items:center}
+.console-link{padding:9px 11px;border:1px solid #7897bc;color:#fff;text-decoration:none}.console-panel{margin:0;border-bottom:1px solid #345a85}.console-panel-title{background:#234c80;color:#fff;padding:9px 12px;font-weight:700;letter-spacing:.5px}
+.console-table-wrap{overflow:auto}.console-table{width:100%;border-collapse:collapse;color:#e8edf4}.console-table th{background:#17365d;color:#a9cffd;text-align:left;font-size:11px;padding:10px;border-right:1px solid #456487}.console-table td{padding:11px;border-top:1px solid #333;border-right:1px solid #333}.console-table tbody tr:hover{background:#121b25}.my-unit-row{background:#102b25!important}.status-pill{display:inline-block;background:#31a84a;color:white;border-radius:10px;padding:3px 10px;font-size:11px}.empty-console{text-align:center;color:#718090;padding:40px!important}
+.console-status-buttons{display:flex;gap:8px;flex-wrap:wrap;padding:12px}.console-status-buttons button{font-family:inherit}.off-duty-form{padding:14px}.unit-control-panel{background:#0d1116}
+@media(max-width:760px){.mode-grid{grid-template-columns:1fr}.console-toolbar{grid-template-columns:1fr 1fr}.toolbar-actions{grid-column:1/-1}}

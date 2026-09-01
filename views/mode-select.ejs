@@ -1,0 +1,16 @@
+<%- include("partials/header", { title: "Select CAD Mode" }) %>
+<div class="mode-wrap">
+<section class="card mode-card">
+<h1>SELECT CAD MODE</h1>
+<p class="muted"><strong><%= user.callsign %></strong> · <%= user.name %> · <%= user.rank || user.role %></p>
+<form method="post" action="/select-mode" class="mode-grid">
+<button name="mode" value="DISPATCH" class="mode-button dispatch-mode" <%= canDispatch ? "" : "disabled" %>>
+<span class="mode-icon">📟</span><strong>DISPATCH</strong><small>Calls · Units · History · Reports · Radio</small>
+</button>
+<button name="mode" value="OFFICER" class="mode-button officer-mode" <%= canOfficer ? "" : "disabled" %>>
+<span class="mode-icon">🚒</span><strong>OFFICER</strong><small>Staffing · Active Calls · Unit CAD · Status</small>
+</button>
+</form>
+<% if(!canDispatch || !canOfficer){ %><p class="muted mode-note">Unavailable modes are disabled based on your account permissions.</p><% } %>
+</section></div>
+<%- include("partials/footer") %>

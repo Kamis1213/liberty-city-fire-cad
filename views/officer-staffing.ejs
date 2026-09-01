@@ -1,0 +1,13 @@
+<%- include("partials/header", { title: "Officer Staffing" }) %>
+<section class="card staffing-card">
+<div class="console-kicker">OFFICER SESSION · <%= user.callsign %></div>
+<h1>SELECT STAFFING</h1>
+<p><strong><%= member.name %></strong> · <%= member.rank || "Officer" %></p>
+<form method="post" action="/officer/staff" class="stack">
+<label>Station<select name="station_id" id="officer-station" required><option value="">Choose station</option><% stations.forEach(s=>{ %><option value="<%= s.id %>"><%= s.station_name %></option><% }) %></select></label>
+<label>Apparatus<select name="unit_id" id="officer-unit" required><option value="">Choose apparatus</option><% units.forEach(u=>{ %><option value="<%= u.id %>" data-station="<%= u.station_id || '' %>"><%= u.unit_name %> — <%= u.station_name || "Unassigned" %></option><% }) %></select></label>
+<label>Position<select name="position" required><option value="OFFICER">OFFICER</option><option value="CAPTAIN">CAPTAIN</option><option value="LIEUTENANT">LIEUTENANT</option><option value="DRIVER / ENGINEER">DRIVER / ENGINEER</option><option value="FIREFIGHTER">FIREFIGHTER</option><option value="MEDIC">MEDIC</option></select></label>
+<button type="submit">GO ON DUTY / OPEN UNIT CAD</button>
+</form></section>
+<script>const st=document.getElementById("officer-station"),un=document.getElementById("officer-unit");st.addEventListener("change",()=>{[...un.options].forEach((o,i)=>{if(i)o.hidden=!!st.value&&o.dataset.station!==st.value});un.value="";});</script>
+<%- include("partials/footer") %>
