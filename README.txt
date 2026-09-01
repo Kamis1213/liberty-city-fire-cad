@@ -16,3 +16,10 @@ NEW:
 DEPLOY:
 Upload all files in this folder to the SAME GitHub CAD repository and commit.
 Render should redeploy automatically.
+
+
+v3.1.1 HOTFIX
+-------------
+Officer CAD status buttons now return the user to the Officer CAD after
+EN ROUTE / ON SCENE / TRANSPORTING / AT HOSPITAL / AVAILABLE / OOS.
+They no longer redirect officers to the full Apparatus MDT page.

@@ -723,19 +723,20 @@ app.post("/loa", requireLogin, async (req, res) => {
 });
 
 app.post("/mdt/units/:id/status", requireLogin, async (req,res) => {
+  const returnPath = req.session.mode === "OFFICER" ? "/officer" : "/mdt";
   const unitId=Number(req.params.id); const status=clean(req.body.status).toUpperCase();
   const allowed=["EN ROUTE","ON SCENE","AVAILABLE","TRANSPORTING","AT HOSPITAL","OUT OF SERVICE"];
-  if (!allowed.includes(status)) return res.redirect("/mdt");
+  if (!allowed.includes(status)) return res.redirect(returnPath);
   const allowedUnit=await pool.query(`SELECT 1 FROM unit_crew WHERE unit_id=$1 AND user_id=$2`,[unitId,req.session.user.id]);
   const privileged=["DISPATCH","COMMAND","ADMIN"].includes(req.session.user.role);
   if (!allowedUnit.rowCount && !privileged) return res.status(403).send("You are not staffed on this apparatus.");
   const ur=await pool.query("SELECT assigned_incident FROM units WHERE id=$1",[unitId]);
-  if (!ur.rowCount) return res.redirect("/mdt");
+  if (!ur.rowCount) return res.redirect(returnPath);
   const incidentId=ur.rows[0].assigned_incident;
   if (status==="AVAILABLE") await pool.query("UPDATE units SET status='AVAILABLE', assigned_incident=NULL WHERE id=$1",[unitId]);
   else await pool.query("UPDATE units SET status=$1 WHERE id=$2",[status,unitId]);
   if (incidentId && ["EN ROUTE","ON SCENE"].includes(status)) await pool.query(`UPDATE incidents SET status=$1, enroute_at=CASE WHEN $1='EN ROUTE' AND enroute_at IS NULL THEN NOW() ELSE enroute_at END, onscene_at=CASE WHEN $1='ON SCENE' AND onscene_at IS NULL THEN NOW() ELSE onscene_at END WHERE id=$2`,[status,incidentId]);
-  res.redirect("/mdt");
+  res.redirect(returnPath);
 });
 
 app.get("/reports", requireLogin, async (req,res) => {
