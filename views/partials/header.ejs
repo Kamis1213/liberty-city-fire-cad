@@ -22,32 +22,21 @@
     </div>
   <% } %>
 </header>
-<% if (user) { %>
+<% if (user && !(typeof session !== "undefined" && session && session.mode === "OFFICER")) { %>
 <nav class="nav">
-  <% if (user && typeof session !== "undefined" && session && session.mode === "OFFICER") { %>
-    <a href="/officer">Officer CAD</a>
-    <a href="/member">My Call</a>
-    <a href="/reports">Reports</a>
-    <a href="/select-mode">Switch Mode</a>
-    <a href="/logout">Logout</a>
-  <% } else { %>
-    <a href="/select-mode">Mode</a>
-    <% if (user) { %>
-      <% if (["DISPATCH","COMMAND","ADMIN"].includes(user.role)) { %><a href="/dashboard">Dispatch</a><% } %>
-      <a href="/mdt">MDT</a>
-      <a href="/member">Member</a>
-      <% if (["DISPATCH","COMMAND","ADMIN"].includes(user.role)) { %><a href="/history">History</a><% } %>
-      <a href="/reports">Reports</a>
-      <% if (["COMMAND","ADMIN"].includes(user.role)) { %>
-        <a href="/admin/units">Units</a>
-        <a href="/admin/stations">Stations</a>
-        <a href="/admin/personnel">Personnel</a>
-        <a href="/admin/loa">LOA Requests</a>
-      <% } %>
-      <% if (user.role === "ADMIN") { %><a href="/admin/users">Users</a><% } %>
-      <a href="/logout">Logout</a>
-    <% } %>
+  <a href="/select-mode">Mode</a>
+  <% if (["DISPATCH","COMMAND","ADMIN"].includes(user.role)) { %><a href="/dashboard">Dispatch</a><% } %>
+  <a href="/mdt">MDT</a>
+  <a href="/member">Member</a>
+  <% if (["DISPATCH","COMMAND","ADMIN"].includes(user.role)) { %><a href="/history">History</a><% } %>
+  <a href="/reports">Reports</a>
+  <% if (["COMMAND","ADMIN"].includes(user.role)) { %>
+    <a href="/admin/units">Units</a>
+    <a href="/admin/stations">Stations</a>
+    <a href="/admin/personnel">Personnel</a>
+    <a href="/admin/loa">LOA Requests</a>
   <% } %>
+  <% if (user.role === "ADMIN") { %><a href="/admin/users">Users</a><% } %>
 </nav>
 <% } %>
 <main class="container">
