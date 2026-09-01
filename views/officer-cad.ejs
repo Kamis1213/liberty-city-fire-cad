@@ -1,4 +1,21 @@
-<%- include("partials/header", { title: "Officer CAD" }) %>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Officer CAD · Liberty City Fire Department</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+html,body{margin:0!important;padding:0!important;width:100%;height:100%;background:#080b0f!important;overflow-x:hidden}
+body>main,.container,.page{max-width:none!important;margin:0!important;padding:0!important}
+.officer-console{width:100vw!important;min-height:100vh!important;margin:0!important;border:0!important;border-radius:0!important;box-sizing:border-box}
+.console-toolbar{position:sticky;top:0;z-index:50}
+.console-panel{width:100%;box-sizing:border-box}
+.console-table{width:100%}
+.off-duty-form{margin:0;padding:14px;background:#0b0d10}
+</style>
+</head>
+<body>
 <div class="officer-console">
 <div class="console-toolbar">
 <div><span class="console-label">CALLSIGN</span><strong><%= user.callsign %></strong></div>
@@ -31,4 +48,5 @@
 </section>
 <form method="post" action="/officer/unstaff" class="off-duty-form"><button class="danger" type="submit">GO OFF DUTY</button></form>
 </div>
-<%- include("partials/footer") %>
+</body>
+</html>

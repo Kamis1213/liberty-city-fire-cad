@@ -353,3 +353,6 @@ legend { color: var(--accent2); font-weight: 800; }
 .console-table-wrap{overflow:auto}.console-table{width:100%;border-collapse:collapse;color:#e8edf4}.console-table th{background:#17365d;color:#a9cffd;text-align:left;font-size:11px;padding:10px;border-right:1px solid #456487}.console-table td{padding:11px;border-top:1px solid #333;border-right:1px solid #333}.console-table tbody tr:hover{background:#121b25}.my-unit-row{background:#102b25!important}.status-pill{display:inline-block;background:#31a84a;color:white;border-radius:10px;padding:3px 10px;font-size:11px}.empty-console{text-align:center;color:#718090;padding:40px!important}
 .console-status-buttons{display:flex;gap:8px;flex-wrap:wrap;padding:12px}.console-status-buttons button{font-family:inherit}.off-duty-form{padding:14px}.unit-control-panel{background:#0d1116}
 @media(max-width:760px){.mode-grid{grid-template-columns:1fr}.console-toolbar{grid-template-columns:1fr 1fr}.toolbar-actions{grid-column:1/-1}}
+
+/* v3.1.5 Officer CAD standalone fullscreen */
+body.officer-fullscreen{margin:0;padding:0;background:#080b0f}

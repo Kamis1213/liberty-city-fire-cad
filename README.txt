@@ -51,3 +51,24 @@ Officer mode now hides the navigation bar completely.
 Officer CAD keeps only compact Records / Switch Mode / Logout controls
 inside the Officer CAD toolbar.
 Dispatch/admin navigation is unchanged.
+
+
+v3.1.5 FULL-SCREEN OFFICER CAD
+------------------------------
+Officer CAD now renders as a standalone full-browser interface.
+Removed from Officer CAD:
+- Main Liberty City CAD header
+- Main navigation bar
+- Dispatch Audio control
+- Duplicate account/logout header
+- Outer page/card spacing
+
+Kept inside Officer CAD:
+- Callsign / Unit / Department / Status
+- Records
+- Switch Mode
+- Logout
+- Active Calls
+- Unit status controls
+- Live Apparatus / Personnel
+- Go Off Duty
