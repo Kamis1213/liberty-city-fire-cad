@@ -23,3 +23,16 @@ v3.1.1 HOTFIX
 Officer CAD status buttons now return the user to the Officer CAD after
 EN ROUTE / ON SCENE / TRANSPORTING / AT HOSPITAL / AVAILABLE / OOS.
 They no longer redirect officers to the full Apparatus MDT page.
+
+
+v3.1.2 NAVIGATION CLEANUP
+-------------------------
+Officer mode now shows only:
+- Officer CAD
+- My Call
+- Reports
+- Switch Mode
+- Logout
+
+Dispatch/admin navigation remains available only outside Officer mode and
+continues to respect the user's account role.

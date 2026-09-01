@@ -23,24 +23,31 @@
   <% } %>
 </header>
 <% if (user) { %>
-<nav class="nav"><a href="/select-mode">Mode</a>
-  <% if (!["FIREFIGHTER","OFFICER"].includes(user.role)) { %><a href="/dashboard">Dispatch</a><% } %>
-  <a href="/mdt">MDT</a>
-  <a href="/member">Member</a>
-  <a href="/history">History</a>
-  <a href="/reports">Reports</a>
-  <% if (["DISPATCH","COMMAND","ADMIN"].includes(user.role)) { %>
-    <a href="/admin/units">Units</a>
-    <a href="/admin/stations">Stations</a>
-    <a href="/admin/personnel">Personnel</a>
+<nav class="nav">
+  <% if (user && session && session.mode === "OFFICER") { %>
+    <a href="/officer">Officer CAD</a>
+    <a href="/member">My Call</a>
+    <a href="/reports">Reports</a>
+    <a href="/select-mode">Switch Mode</a>
+    <a href="/logout">Logout</a>
+  <% } else { %>
+    <a href="/select-mode">Mode</a>
+    <% if (user) { %>
+      <% if (["DISPATCH","COMMAND","ADMIN"].includes(user.role)) { %><a href="/dashboard">Dispatch</a><% } %>
+      <a href="/mdt">MDT</a>
+      <a href="/member">Member</a>
+      <% if (["DISPATCH","COMMAND","ADMIN"].includes(user.role)) { %><a href="/history">History</a><% } %>
+      <a href="/reports">Reports</a>
+      <% if (["COMMAND","ADMIN"].includes(user.role)) { %>
+        <a href="/admin/units">Units</a>
+        <a href="/admin/stations">Stations</a>
+        <a href="/admin/personnel">Personnel</a>
+        <a href="/admin/loa">LOA Requests</a>
+      <% } %>
+      <% if (user.role === "ADMIN") { %><a href="/admin/users">Users</a><% } %>
+      <a href="/logout">Logout</a>
+    <% } %>
   <% } %>
-  <% if (user.role === "OFFICER" || (user.role === "FIREFIGHTER" && ["Captain","Lieutenant"].includes(user.rank))) { %>
-    <a href="/admin/personnel">Personnel / Staffing</a>
-  <% } %>
-  <% if (["COMMAND","ADMIN"].includes(user.role)) { %>
-    <a href="/admin/loa">LOA Requests</a>
-  <% } %>
-  <% if (user.role === "ADMIN") { %><a href="/admin/users">Users</a><% } %>
 </nav>
 <% } %>
 <main class="container">
