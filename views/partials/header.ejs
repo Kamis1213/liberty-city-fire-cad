@@ -24,7 +24,7 @@
 </header>
 <% if (user) { %>
 <nav class="nav">
-  <% if (user && session && session.mode === "OFFICER") { %>
+  <% if (user && typeof session !== "undefined" && session && session.mode === "OFFICER") { %>
     <a href="/officer">Officer CAD</a>
     <a href="/member">My Call</a>
     <a href="/reports">Reports</a>

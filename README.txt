@@ -36,3 +36,10 @@ Officer mode now shows only:
 
 Dispatch/admin navigation remains available only outside Officer mode and
 continues to respect the user's account role.
+
+
+v3.1.3 HOTFIX
+-------------
+Fixes "CAD server error" introduced by v3.1.2 navigation cleanup.
+The Express session is now exposed to EJS templates, and the Officer-mode
+header check is defensive if session data is absent.
