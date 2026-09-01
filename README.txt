@@ -193,3 +193,16 @@ V2.7.3 OFFICER ROLE
 - OFFICER can use Personnel / Staffing.
 - OFFICER does not receive Dispatch, Command, or Admin permissions.
 - Existing Captain/Lieutenant accounts using FIREFIGHTER role remain compatible.
+
+
+LIBERTY CITY FIRE CAD v3.0
+- On Duty / Off Duty shift system with station, apparatus, and position.
+- Live staffing visible to Dispatch.
+- Crew snapshot attached to incidents at dispatch time.
+- Apparatus MDT status buttons.
+- Incident officer reports and searchable report list.
+- CAD radio Re-tone control.
+- Member password change and Admin password reset.
+- Existing account enable/disable retained.
+- Safer disabled synthetic roster identities.
+- Existing PostgreSQL data preserved with migration-safe ALTER/CREATE statements.

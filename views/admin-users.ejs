@@ -51,6 +51,7 @@
           <td><%= u.role %></td>
           <td><%= u.active ? "YES" : "NO" %></td>
           <td>
+            <form method="post" action="/admin/users/<%= u.id %>/password" class="inline"><input type="password" name="password" minlength="8" placeholder="New password" required><button type="submit" class="secondary">Reset</button></form>
             <% if (u.id !== user.id) { %>
               <form method="post" action="/admin/users/<%= u.id %>/toggle">
                 <button type="submit" class="secondary"><%= u.active ? "Disable" : "Enable" %></button>

@@ -337,3 +337,6 @@ legend { color: var(--accent2); font-weight: 800; }
   font-weight:800;
   padding:5px 0;
 }
+
+/* v3.0 */
+.mdt-buttons{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:8px;margin-top:12px}.mdt-buttons button{margin:0}.crew-line{display:block;color:var(--muted);margin-top:6px}.crew-chips{display:flex;flex-wrap:wrap;gap:8px}.crew-chips span{padding:8px 10px;border:1px solid var(--line);border-radius:8px}.danger{background:#8b1b1b!important;color:#fff!important}

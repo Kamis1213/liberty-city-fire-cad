@@ -48,7 +48,7 @@
               <div class="unit-card">
                 <strong><%= unit.unit_name %></strong>
                 <span><%= unit.unit_type %></span>
-                <span class="status"><%= unit.status %></span>
+                <span class="status"><%= unit.status %></span><% if(unit.crew){ %><small class="crew-line"><%= unit.crew %></small><% } %>
               </div>
             <% }) %>
           </div>
@@ -75,7 +75,7 @@
             <td><%= i.address %><br><small><%= i.notes %></small></td>
             <td><%= i.units || "None" %></td>
             <td><span class="status"><%= i.status %></span></td>
-            <td><span class="radio-status <%= (i.radio_status || '').replace(' ', '-').toLowerCase() %>"><%= i.radio_status || "NOT CONFIGURED" %></span></td>
+            <td><span class="radio-status <%= (i.radio_status || '').replace(' ', '-').toLowerCase() %>"><%= i.radio_status || "NOT CONFIGURED" %></span><form method="post" action="/incidents/<%= i.id %>/radio"><button class="secondary" type="submit">Re-tone</button></form></td>
             <td class="times">
               <small>Created: <%= new Date(i.created_at).toLocaleTimeString() %></small><br>
               <% if (i.dispatched_at) { %><small>Dispatch: <%= new Date(i.dispatched_at).toLocaleTimeString() %></small><br><% } %>

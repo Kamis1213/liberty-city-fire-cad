@@ -154,6 +154,31 @@ async function initDatabase() {
       UNIQUE(unit_id, user_id)
     );
 
+    CREATE TABLE IF NOT EXISTS incident_crew (
+      id SERIAL PRIMARY KEY,
+      incident_id INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+      unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      member_name TEXT NOT NULL,
+      member_rank TEXT DEFAULT '',
+      position TEXT DEFAULT '',
+      UNIQUE(incident_id, unit_id, member_name, position)
+    );
+
+    CREATE TABLE IF NOT EXISTS incident_reports (
+      id SERIAL PRIMARY KEY,
+      incident_id INTEGER NOT NULL UNIQUE REFERENCES incidents(id) ON DELETE CASCADE,
+      officer_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      officer_name TEXT NOT NULL,
+      narrative TEXT NOT NULL,
+      actions_taken TEXT DEFAULT '',
+      disposition TEXT DEFAULT '',
+      injuries TEXT DEFAULT '',
+      property_damage TEXT DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS loa_requests (
       id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -176,6 +201,9 @@ async function initDatabase() {
   await pool.query(`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS radio_error TEXT DEFAULT ''`);
   await pool.query(`ALTER TABLE units ADD COLUMN IF NOT EXISTS station_id INTEGER REFERENCES stations(id) ON DELETE SET NULL`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS personnel_id INTEGER REFERENCES personnel(id) ON DELETE SET NULL`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS on_duty BOOLEAN NOT NULL DEFAULT FALSE`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS duty_started_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS station_id INTEGER REFERENCES stations(id) ON DELETE SET NULL`);
 
   const adminUsername = process.env.ADMIN_USERNAME || "admin";
   const adminPassword = process.env.ADMIN_PASSWORD || "ChangeMe123!";
@@ -329,9 +357,12 @@ app.get("/dashboard", requireRole("DISPATCH"), async (req, res) => {
       ORDER BY i.created_at DESC
     `),
     pool.query(`
-      SELECT u.*, s.station_name
+      SELECT u.*, s.station_name, COALESCE(STRING_AGG(us.name || ' — ' || uc.position, ', ' ORDER BY uc.position), '') AS crew
       FROM units u
       LEFT JOIN stations s ON s.id = u.station_id
+      LEFT JOIN unit_crew uc ON uc.unit_id=u.id
+      LEFT JOIN users us ON us.id=uc.user_id
+      GROUP BY u.id,s.station_name
       ORDER BY COALESCE(s.station_name, 'ZZZ'), u.unit_name
     `)
   ]);
@@ -387,6 +418,12 @@ async function createIncident(req, res) {
        WHERE id = $2`,
       [incident.id, unitId]
     );
+    await pool.query(`
+      INSERT INTO incident_crew (incident_id, unit_id, user_id, member_name, member_rank, position)
+      SELECT $1, uc.unit_id, us.id, us.name, us.rank, uc.position
+      FROM unit_crew uc JOIN users us ON us.id=uc.user_id
+      WHERE uc.unit_id=$2
+      ON CONFLICT DO NOTHING`, [incident.id, unitId]);
     assignedNames.push(unitResult.rows[0].unit_name);
   }
 
@@ -445,7 +482,7 @@ app.get("/api/alerts", requireLogin, async (req, res) => {
   let query;
   let params = [];
 
-  if (req.session.user.role === "FIREFIGHTER") {
+  if (["FIREFIGHTER","OFFICER"].includes(req.session.user.role)) {
     params = [req.session.user.id];
     query = `
       SELECT DISTINCT i.id, i.incident_number, i.priority, i.call_type, i.address,
@@ -523,7 +560,8 @@ app.get("/member", requireLogin, async (req, res) => {
     "SELECT * FROM users WHERE id = $1",
     [req.session.user.id]
   );
-  const unitsResult = await pool.query("SELECT * FROM units ORDER BY unit_name");
+  const unitsResult = await pool.query(`SELECT u.*, s.station_name FROM units u LEFT JOIN stations s ON s.id=u.station_id ORDER BY COALESCE(s.station_name,'ZZZ'), u.unit_name`);
+  const stationsResult = await pool.query("SELECT * FROM stations ORDER BY station_name");
   const crewResult = await pool.query(
     `SELECT uc.*, u.unit_name
      FROM unit_crew uc
@@ -541,6 +579,7 @@ app.get("/member", requireLogin, async (req, res) => {
   res.render("member", {
     member: userResult.rows[0],
     units: unitsResult.rows,
+    stations: stationsResult.rows,
     crew: crewResult.rows[0] || null,
     loaRequests: loaResult.rows
   });
@@ -548,33 +587,27 @@ app.get("/member", requireLogin, async (req, res) => {
 
 app.post("/member/staff", requireLogin, async (req, res) => {
   const unitId = Number(req.body.unit_id);
+  const stationId = Number(req.body.station_id) || null;
   const position = clean(req.body.position);
   if (!unitId || !position) return res.redirect("/member");
-
-  await pool.query("DELETE FROM unit_crew WHERE user_id = $1", [
-    req.session.user.id
-  ]);
-  await pool.query(
-    `INSERT INTO unit_crew (unit_id, user_id, position)
-     VALUES ($1, $2, $3)`,
-    [unitId, req.session.user.id, position]
-  );
-  await pool.query(
-    `UPDATE users SET unit_id = $1, position = $2 WHERE id = $3`,
-    [unitId, position, req.session.user.id]
-  );
-
+  await pool.query("DELETE FROM unit_crew WHERE user_id = $1", [req.session.user.id]);
+  await pool.query(`INSERT INTO unit_crew (unit_id,user_id,position) VALUES ($1,$2,$3)`, [unitId,req.session.user.id,position]);
+  await pool.query(`UPDATE users SET unit_id=$1, position=$2, station_id=$3, on_duty=TRUE, duty_started_at=COALESCE(duty_started_at,NOW()) WHERE id=$4`, [unitId,position,stationId,req.session.user.id]);
   res.redirect("/member");
 });
 
 app.post("/member/unstaff", requireLogin, async (req, res) => {
-  await pool.query("DELETE FROM unit_crew WHERE user_id = $1", [
-    req.session.user.id
-  ]);
-  await pool.query(
-    `UPDATE users SET unit_id = NULL, position = '' WHERE id = $1`,
-    [req.session.user.id]
-  );
+  await pool.query("DELETE FROM unit_crew WHERE user_id=$1", [req.session.user.id]);
+  await pool.query(`UPDATE users SET unit_id=NULL, position='', station_id=NULL, on_duty=FALSE, duty_started_at=NULL WHERE id=$1`, [req.session.user.id]);
+  res.redirect("/member");
+});
+
+app.post("/member/password", requireLogin, async (req,res) => {
+  const current=String(req.body.current_password||''); const next=String(req.body.new_password||'');
+  if (next.length < 8) return res.status(400).send("New password must be at least 8 characters. Go back and try again.");
+  const r=await pool.query("SELECT password FROM users WHERE id=$1",[req.session.user.id]);
+  if (!r.rowCount || !(await bcrypt.compare(current,r.rows[0].password))) return res.status(400).send("Current password is incorrect. Go back and try again.");
+  await pool.query("UPDATE users SET password=$1 WHERE id=$2",[await bcrypt.hash(next,12),req.session.user.id]);
   res.redirect("/member");
 });
 
@@ -591,6 +624,48 @@ app.post("/loa", requireLogin, async (req, res) => {
     [req.session.user.id, startDate, endDate, reason]
   );
   res.redirect("/member");
+});
+
+app.post("/mdt/units/:id/status", requireLogin, async (req,res) => {
+  const unitId=Number(req.params.id); const status=clean(req.body.status).toUpperCase();
+  const allowed=["EN ROUTE","ON SCENE","AVAILABLE","TRANSPORTING","AT HOSPITAL","OUT OF SERVICE"];
+  if (!allowed.includes(status)) return res.redirect("/mdt");
+  const allowedUnit=await pool.query(`SELECT 1 FROM unit_crew WHERE unit_id=$1 AND user_id=$2`,[unitId,req.session.user.id]);
+  const privileged=["DISPATCH","COMMAND","ADMIN"].includes(req.session.user.role);
+  if (!allowedUnit.rowCount && !privileged) return res.status(403).send("You are not staffed on this apparatus.");
+  const ur=await pool.query("SELECT assigned_incident FROM units WHERE id=$1",[unitId]);
+  if (!ur.rowCount) return res.redirect("/mdt");
+  const incidentId=ur.rows[0].assigned_incident;
+  if (status==="AVAILABLE") await pool.query("UPDATE units SET status='AVAILABLE', assigned_incident=NULL WHERE id=$1",[unitId]);
+  else await pool.query("UPDATE units SET status=$1 WHERE id=$2",[status,unitId]);
+  if (incidentId && ["EN ROUTE","ON SCENE"].includes(status)) await pool.query(`UPDATE incidents SET status=$1, enroute_at=CASE WHEN $1='EN ROUTE' AND enroute_at IS NULL THEN NOW() ELSE enroute_at END, onscene_at=CASE WHEN $1='ON SCENE' AND onscene_at IS NULL THEN NOW() ELSE onscene_at END WHERE id=$2`,[status,incidentId]);
+  res.redirect("/mdt");
+});
+
+app.get("/reports", requireLogin, async (req,res) => {
+  const reports=await pool.query(`SELECT i.*, r.id report_id, r.officer_name, r.disposition, r.updated_at FROM incidents i LEFT JOIN incident_reports r ON r.incident_id=i.id ORDER BY i.created_at DESC LIMIT 250`);
+  res.render("reports",{incidents:reports.rows});
+});
+app.get("/reports/:id", requireLogin, async (req,res) => {
+  const id=Number(req.params.id);
+  const [incident,crew,report]=await Promise.all([
+    pool.query(`SELECT i.*, COALESCE(STRING_AGG(DISTINCT u.unit_name, ', '),'') units FROM incidents i LEFT JOIN incident_units iu ON iu.incident_id=i.id LEFT JOIN units u ON u.id=iu.unit_id WHERE i.id=$1 GROUP BY i.id`,[id]),
+    pool.query(`SELECT ic.*, u.unit_name FROM incident_crew ic JOIN units u ON u.id=ic.unit_id WHERE ic.incident_id=$1 ORDER BY u.unit_name,ic.position`,[id]),
+    pool.query("SELECT * FROM incident_reports WHERE incident_id=$1",[id])]);
+  if (!incident.rowCount) return res.status(404).send("Incident not found.");
+  res.render("report-edit",{incident:incident.rows[0],crew:crew.rows,report:report.rows[0]||null,canEdit:["OFFICER","DISPATCH","COMMAND","ADMIN"].includes(req.session.user.role)});
+});
+app.post("/reports/:id", requireLogin, async (req,res) => {
+  if (!["OFFICER","DISPATCH","COMMAND","ADMIN"].includes(req.session.user.role)) return res.status(403).send("Officer access required.");
+  const id=Number(req.params.id), narrative=clean(req.body.narrative); if(!narrative) return res.status(400).send("Narrative is required.");
+  await pool.query(`INSERT INTO incident_reports (incident_id,officer_id,officer_name,narrative,actions_taken,disposition,injuries,property_damage) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (incident_id) DO UPDATE SET officer_id=EXCLUDED.officer_id, officer_name=EXCLUDED.officer_name, narrative=EXCLUDED.narrative, actions_taken=EXCLUDED.actions_taken, disposition=EXCLUDED.disposition, injuries=EXCLUDED.injuries, property_damage=EXCLUDED.property_damage, updated_at=NOW()`,[id,req.session.user.id,req.session.user.name,narrative,clean(req.body.actions_taken),clean(req.body.disposition),clean(req.body.injuries),clean(req.body.property_damage)]);
+  res.redirect(`/reports/${id}`);
+});
+
+app.post("/incidents/:id/radio", requireRole("DISPATCH"), async (req,res) => {
+  const id=Number(req.params.id); const ir=await pool.query("SELECT * FROM incidents WHERE id=$1",[id]);
+  if(ir.rowCount){ const ur=await pool.query(`SELECT STRING_AGG(u.unit_name, ', ' ORDER BY u.unit_name) units FROM incident_units iu JOIN units u ON u.id=iu.unit_id WHERE iu.incident_id=$1`,[id]); await sendToRadio(ir.rows[0],ur.rows[0].units||''); }
+  res.redirect(req.get('referer')||'/dashboard');
 });
 
 app.get("/admin/loa", requireRole("COMMAND"), async (req, res) => {
@@ -666,6 +741,12 @@ app.post("/admin/users", requireRole("ADMIN"), async (req, res) => {
     });
   }
 
+  res.redirect("/admin/users");
+});
+
+app.post("/admin/users/:id/password", requireRole("ADMIN"), async (req,res) => {
+  const id=Number(req.params.id); const password=String(req.body.password||'');
+  if(id && password.length>=8) await pool.query("UPDATE users SET password=$1 WHERE id=$2",[await bcrypt.hash(password,12),id]);
   res.redirect("/admin/users");
 });
 
@@ -776,10 +857,10 @@ app.post("/admin/personnel/:id/staff", requireStaffingAccess, async (req, res) =
 
     // Create a disabled CAD identity used only for unit staffing. It cannot log in.
     const syntheticUsername = `roster_${personnelId}_${Date.now()}`;
-    const impossiblePassword = `$2b$12$DISABLED_${Date.now()}_${Math.random()}`;
+    const impossiblePassword = await bcrypt.hash(`DISABLED_${Date.now()}_${Math.random()}`, 12);
     usr = await pool.query(
-      `INSERT INTO users (username, password, name, rank, role, personnel_id)
-       VALUES ($1,$2,$3,$4,'FIREFIGHTER',$5)
+      `INSERT INTO users (username, password, name, rank, role, personnel_id, active)
+       VALUES ($1,$2,$3,$4,'FIREFIGHTER',$5,FALSE)
        RETURNING id`,
       [syntheticUsername, impossiblePassword, p.rows[0].name, p.rows[0].rank, personnelId]
     );
