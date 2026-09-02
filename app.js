@@ -10,6 +10,8 @@ const { Pool } = require("pg");
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === "production";
+const ERLC_SERVER_KEY = process.env.ERLC_SERVER_KEY;
+const ERLC_API = "https://api.erlc.gg/v2/server?EmergencyCalls=true";
 
 if (!process.env.DATABASE_URL) {
   console.error("ERROR: DATABASE_URL is not set.");
