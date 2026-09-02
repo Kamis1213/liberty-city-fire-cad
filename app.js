@@ -874,7 +874,21 @@ function requireStaffingAccess(req, res, next) {
   if (!canStaffApparatus(req.session.user)) return res.status(403).send("Staffing access denied.");
   next();
 }
+app.get("/test-erlc", async (req, res) => {
+  try {
+    const response = await fetch(ERLC_API, {
+      headers: {
+        "server-key": ERLC_SERVER_KEY
+      }
+    });
 
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error("ERLC TEST ERROR:", err);
+    res.status(500).json({ error: "ERLC connection failed" });
+  }
+});
 app.get("/admin/personnel", requireLogin, async (req, res) => {
   const [personnel, stations, units] = await Promise.all([
     pool.query(`
